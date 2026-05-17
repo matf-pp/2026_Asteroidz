@@ -54,11 +54,13 @@ fn main() {
         speed: 200.0,
     };
 
+    let texture = rl.load_texture(&thread, "assets/spaceship.png").unwrap();
+
     while !rl.window_should_close() {
         player.update(&rl, window_width, window_height);
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::WHITE);
-        d.draw_rectangle_v(player.position, player.box_size, Color::RED);
+        d.draw_texture(&texture, player.position.x as i32, player.position.y as i32, Color::WHITE);
     }
 }
