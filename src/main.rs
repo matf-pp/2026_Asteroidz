@@ -26,14 +26,14 @@ impl Player {
         if self.position.x < -self.box_size.x {
             self.position.x = window_width as f32;
         }
-        if self.position.x > (window_width as f32) + self.box_size.x {
-            self.position.x = 0.0;
+        if self.position.x > (window_width as f32) {
+            self.position.x = -self.box_size.x;
         }
         if self.position.y < -self.box_size.y {
             self.position.y = window_height as f32;
         }
-        if self.position.y > (window_height as f32) + self.box_size.y {
-            self.position.y = 0.0;
+        if self.position.y > (window_height as f32) {
+            self.position.y = -self.box_size.y;
         }
     }
 }
@@ -50,7 +50,7 @@ fn main() {
 
     let mut player = Player {
         position: Vector2::new(100.0, 100.0),
-        box_size: Vector2::new(10.0, 10.0),
+        box_size: Vector2::new(32.0, 32.0),
         speed: 200.0,
     };
 
