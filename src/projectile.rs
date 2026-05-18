@@ -28,13 +28,8 @@ impl Projectile {
         d.draw_texture_pro(
             texture,
             Rectangle::new(0.0, 0.0, texture.width as f32, texture.height as f32),
-            Rectangle::new(
-                self.position.x - 8.0,
-                self.position.y,
-                self.length,
-                self.width,
-            ),
-            Vector2::new(self.width / 2.0, self.length / 2.0),
+            Rectangle::new(self.position.x, self.position.y, self.length, self.width),
+            Vector2::new(self.length / 2.0, self.width / 2.0),
             self.angle.to_degrees() + 90.0,
             Color::WHITE,
         );
