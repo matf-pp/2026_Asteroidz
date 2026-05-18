@@ -1,17 +1,25 @@
 use raylib::prelude::*;
 use raylib::consts::KeyboardKey::*;
 
-
+#[derive(PartialEq)]
+enum ThrusterState {
+    Off,
+    Single,
+    Triple,
+}
 struct Player {
     position: Vector2,
     velocity: Vector2,
     box_size: Vector2,
     angle: f32,
+    thruster_state: ThrusterState,
+    thruster_timer: f32,
 }
 
 impl Player {
     const SPEED: f32 = 1.00;
     const ROTATION_SPEED : f32 = 2.5;
+    const ANIMATION_SPEED: f32 = 0.1;
 
     fn update(&mut self, rl: &RaylibHandle, window_width: i32, window_height: i32) {
         let dt = rl.get_frame_time();
@@ -24,6 +32,21 @@ impl Player {
         if rl.is_key_down(KEY_UP) {
             self.velocity.x += Self::SPEED * self.angle.sin();
             self.velocity.y -= Self::SPEED * self.angle.cos();
+
+            if self.thruster_state == ThrusterState::Off {
+                self.thruster_state = ThrusterState::Single;
+            }
+            self.thruster_timer += dt;
+            if self.thruster_timer >= Self::ANIMATION_SPEED {
+                self.thruster_timer = 0.0;
+                self.thruster_state = match self.thruster_state {
+                    ThrusterState::Single => ThrusterState::Triple,
+                    _ => ThrusterState::Single,
+                };
+            }
+        } else {
+            self.thruster_state = ThrusterState::Off;
+            self.thruster_timer = 0.0;
         }
 
         self.velocity *= 0.99;
@@ -59,9 +82,13 @@ fn main() {
         velocity: Vector2::new(0.0, 0.0),
         box_size: Vector2::new(32.0, 32.0),
         angle: 0.0,
+        thruster_state: ThrusterState::Off,
+        thruster_timer: 0.0,
     };
 
-    let texture = rl.load_texture(&thread, "assets/spaceship.png").unwrap();
+    let texture_static = rl.load_texture(&thread, "assets/spaceship.png").unwrap();
+    let texture_1thruster: Texture2D = rl.load_texture(&thread, "assets/1thruster.png").unwrap();
+    let texture_3thruster: Texture2D = rl.load_texture(&thread, "assets/3thruster.png").unwrap();
 
     while !rl.window_should_close() {
         player.update(&rl, window_width, window_height);
@@ -69,9 +96,16 @@ fn main() {
 
         d.clear_background(Color::WHITE);
         // d.draw_texture(&texture, player.position.x as i32, player.position.y as i32, Color::WHITE);
+        
+        let texture_current = match player.thruster_state {
+        ThrusterState::Off => &texture_static,
+        ThrusterState::Single => &texture_1thruster,
+        ThrusterState::Triple => &texture_3thruster, 
+        };
+
         d.draw_texture_pro(
-            &texture,
-            Rectangle::new(0.0, 0.0, texture.width as f32, texture.height as f32),
+            texture_current,
+            Rectangle::new(0.0, 0.0, texture_current.width as f32, texture_current.height as f32),
             Rectangle::new(player.position.x, player.position.y, player.box_size.x, player.box_size.y),
             Vector2::new(player.box_size.x / 2.0, player.box_size.y / 2.0),
             player.angle.to_degrees(),
