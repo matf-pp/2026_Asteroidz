@@ -1,12 +1,12 @@
 use raylib::prelude::*;
 pub struct Asteroid {
-    position: Vector2,
-    velocity: Vector2,
-    hitbox_radius: f32,
-    width: f32,
-    height: f32,
-    angle: f32,
-    rotation_speed: f32,
+    pub position: Vector2,
+    pub velocity: Vector2,
+    pub hitbox_radius: f32,
+    pub width: f32,
+    pub height: f32,
+    pub angle: f32,
+    pub rotation_speed: f32,
 }
 
 impl Asteroid {

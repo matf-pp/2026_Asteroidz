@@ -90,6 +90,13 @@ impl Player {
     }
 }
 
+fn check_collision(player : &Player, asteroid : &Asteroid) -> bool {
+    let dx = player.position.x - asteroid.position.x;
+    let dy = player.position.y - asteroid.position.y;
+    let distance = (dx * dx + dy * dy).sqrt();
+    return distance < asteroid.hitbox_radius + player.box_size.x.max(player.box_size.y) / 2.0;
+}
+
 fn main() {
     let window_width = 640;
     let window_height = 480;
@@ -198,6 +205,9 @@ fn main() {
 
         for x in &mut asteroids {
             x.update(dt, window_width, window_height);
+            if player._is_alive() && check_collision(&player, x) {
+                player._take_damage();
+            }
         }
 
         let mut d = rl.begin_drawing(&thread);
