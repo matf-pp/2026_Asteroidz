@@ -8,6 +8,7 @@ enum ThrusterState {
     Single,
     Triple,
 }
+
 use crate::controls::Controls;
 use projectile::Projectile;
 use raylib::prelude::*;
@@ -98,6 +99,9 @@ fn main() {
         .build();
 
     let mut audio = RaylibAudio::init_audio_device();
+    let mut volume = 1.0;
+    let mut muted = false;
+    audio.set_master_volume(volume);
 
     let mut player = Player {
         position: Vector2::new(100.0, 100.0),
@@ -133,11 +137,22 @@ fn main() {
 
     let mut projectiles: Vec<Projectile> = Vec::new();
 
-    let controls = Controls::new(None, None, None, None);
+    let controls = Controls::new(None, None, None, None, None, None, None);
 
     while !rl.window_should_close() {
         audio.update_music_stream(&mut background_music);
-
+        if rl.is_key_pressed(controls.mute){
+            audio.set_master_volume(if !muted {0.0} else {volume});
+            muted=!muted;
+        }
+        if rl.is_key_down(controls.volume_up){
+            volume = (volume+0.01).min(1.0);
+            audio.set_master_volume(volume);
+        }
+        if rl.is_key_down(controls.volume_down){
+            volume=(volume-0.01).max(0.0);
+            audio.set_master_volume(volume);
+        }
         if player.thruster_state != ThrusterState::Off {
             audio.update_music_stream(&mut sfx_thruster);
             if !is_thruster_sfx_playing {
