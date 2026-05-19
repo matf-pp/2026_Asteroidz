@@ -1,6 +1,6 @@
 mod controls;
 mod projectile;
-
+mod asteroids;
 #[derive(PartialEq)]
 
 enum ThrusterState {
@@ -11,7 +11,9 @@ enum ThrusterState {
 
 use crate::controls::Controls;
 use projectile::Projectile;
+use asteroids::Asteroid;
 use raylib::prelude::*;
+use rand::{Rng, RngExt};
 
 struct Player {
     position: Vector2,
@@ -118,6 +120,7 @@ fn main() {
     let texture_3thruster: Texture2D = rl.load_texture(&thread, "assets/3thruster.png").unwrap();
     let heart_texture = rl.load_texture(&thread, "assets/heart.png").unwrap();
     let projectile_texture = rl.load_texture(&thread, "assets/projectile.png").unwrap();
+    let asteroid_texture = rl.load_texture(&thread, "assets/asteroid.png").unwrap();
 
     let mut background_music =
         Music::load_music_stream(&thread, "assets/test_background.mp3").unwrap();
@@ -138,6 +141,21 @@ fn main() {
     let mut projectiles: Vec<Projectile> = Vec::new();
 
     let controls = Controls::new(None, None, None, None, None, None, None);
+
+    let mut asteroids : Vec<Asteroid> = Vec::new();
+    let mut rng = rand::rng();
+
+    for i in 0..=2 {
+        asteroids.push(Asteroid::new(
+            Vector2::new(rng.random_range(0.0..window_width as f32), rng.random_range(0.0..window_height as f32)),
+            Vector2::new(rng.random_range(-100.0..100.0), rng.random_range(-100.0..100.0)),
+            60.0,
+            64.0,
+            64.0,
+            rng.random_range(0.0..360.0),
+            rng.random_range(-2.0..2.0),
+        ));
+    }
 
     while !rl.window_should_close() {
         audio.update_music_stream(&mut background_music);
@@ -178,6 +196,10 @@ fn main() {
             proj.update(dt);
         }
 
+        for x in &mut asteroids {
+            x.update(dt, window_width, window_height);
+        }
+
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::WHITE);
@@ -215,6 +237,10 @@ fn main() {
         for i in 0..player.health {
             // draw healthbar
             d.draw_texture(&heart_texture, 10 + (i as i32 * 25), 10, Color::WHITE);
+        }
+
+        for ast in &asteroids {
+            ast.draw(&mut d, &asteroid_texture);
         }
     }
 }
