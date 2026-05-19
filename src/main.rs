@@ -89,6 +89,8 @@ fn main() {
         .vsync()
         .build();
 
+    let mut audio = RaylibAudio::init_audio_device(); 
+
     let mut player = Player {
         position: Vector2::new(100.0, 100.0),
         velocity: Vector2::new(0.0, 0.0),
@@ -105,13 +107,45 @@ fn main() {
     let heart_texture = rl.load_texture(&thread, "assets/heart.png").unwrap();
     let projectile_texture = rl.load_texture(&thread, "assets/projectile.png").unwrap();
 
+    let mut background_music = Music::load_music_stream(&thread, "assets/test_background.mp3").unwrap();
+    background_music.looping=true;
+    audio.play_music_stream(&mut background_music);
+    let mut sfx_thruster = Music::load_music_stream(&thread, "assets/test_thruster.mp3").unwrap();
+    sfx_thruster.looping=true;
+    let mut is_thruster_sfx_playing=false;//ugly, will maybe find something better later
+    let laser_pool = [
+        Sound::load_sound("assets/test_laser.wav").unwrap(),
+        Sound::load_sound("assets/test_laser.wav").unwrap(),
+        Sound::load_sound("assets/test_laser.wav").unwrap(),
+        Sound::load_sound("assets/test_laser.wav").unwrap(),
+        Sound::load_sound("assets/test_laser.wav").unwrap(),
+    ]; //doesn't seem to be any better solution to allow overlapping
+    let mut current_laser=0;
+
     let mut projectiles: Vec<Projectile> = Vec::new();
 
     while !rl.window_should_close() {
         player.update(&rl, window_width, window_height);
+        audio.update_music_stream(&mut background_music);
+
+        if player.thruster_state != ThrusterState::Off {
+        audio.update_music_stream(&mut sfx_thruster);
+        if !is_thruster_sfx_playing {
+            audio.play_music_stream(&mut sfx_thruster);
+            is_thruster_sfx_playing=true;
+            }
+        } else {
+            if is_thruster_sfx_playing {
+                audio.stop_music_stream(&mut sfx_thruster);
+                is_thruster_sfx_playing=false;
+            }
+        }
 
         if rl.is_key_pressed(KEY_SPACE) {
             projectiles.push(Projectile::new(player.position, player.angle));
+            
+            audio.play_sound(&laser_pool[current_laser]);
+            current_laser = (current_laser+1)%laser_pool.len();
         }
 
         // just for debugging:
