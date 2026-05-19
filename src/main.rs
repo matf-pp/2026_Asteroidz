@@ -147,11 +147,11 @@ fn main() {
         }
         if rl.is_key_down(controls.volume_up){
             volume = (volume+0.01).min(1.0);
-            audio.set_master_volume(volume);
+            if !muted {audio.set_master_volume(volume);}
         }
         if rl.is_key_down(controls.volume_down){
             volume=(volume-0.01).max(0.0);
-            audio.set_master_volume(volume);
+            if !muted {audio.set_master_volume(volume);}
         }
         if player.thruster_state != ThrusterState::Off {
             audio.update_music_stream(&mut sfx_thruster);
