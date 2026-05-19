@@ -1,13 +1,15 @@
+mod controls;
 mod projectile;
 
 #[derive(PartialEq)]
+
 enum ThrusterState {
     Off,
     Single,
     Triple,
 }
+use crate::controls::Controls;
 use projectile::Projectile;
-use raylib::consts::KeyboardKey::*;
 use raylib::prelude::*;
 
 struct Player {
@@ -25,15 +27,21 @@ impl Player {
     const ROTATION_SPEED: f32 = 2.5;
     const ANIMATION_SPEED: f32 = 0.1;
 
-    fn update(&mut self, rl: &RaylibHandle, window_width: i32, window_height: i32) {
+    fn update(
+        &mut self,
+        rl: &RaylibHandle,
+        window_width: i32,
+        window_height: i32,
+        controls: &Controls,
+    ) {
         let dt = rl.get_frame_time();
-        if rl.is_key_down(KEY_RIGHT) {
+        if rl.is_key_down(controls.right) {
             self.angle += Self::ROTATION_SPEED * dt;
         }
-        if rl.is_key_down(KEY_LEFT) {
+        if rl.is_key_down(controls.left) {
             self.angle -= Self::ROTATION_SPEED * dt;
         }
-        if rl.is_key_down(KEY_UP) {
+        if rl.is_key_down(controls.forward) {
             self.velocity.x += Self::SPEED * self.angle.sin();
             self.velocity.y -= Self::SPEED * self.angle.cos();
 
@@ -70,11 +78,11 @@ impl Player {
         }
     }
 
-    fn take_damage(&mut self) {
+    fn _take_damage(&mut self) {
         self.health = self.health.saturating_sub(1);
     }
 
-    fn is_alive(&self) -> bool {
+    fn _is_alive(&self) -> bool {
         return self.health > 0;
     }
 }
@@ -107,19 +115,13 @@ fn main() {
 
     let mut projectiles: Vec<Projectile> = Vec::new();
 
+    let controls = Controls::new(None, None, None, None);
+
     while !rl.window_should_close() {
-        player.update(&rl, window_width, window_height);
+        player.update(&rl, window_width, window_height, &controls);
 
-        if rl.is_key_pressed(KEY_SPACE) {
+        if rl.is_key_pressed(controls.shoot) {
             projectiles.push(Projectile::new(player.position, player.angle));
-        }
-
-        // just for debugging:
-        if rl.is_key_pressed(KEY_F) {
-            player.take_damage();
-            if !player.is_alive() {
-                break;
-            }
         }
 
         let dt = rl.get_frame_time();
