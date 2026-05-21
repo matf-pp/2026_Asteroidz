@@ -1,6 +1,6 @@
+mod asteroids;
 mod controls;
 mod projectile;
-mod asteroids;
 #[derive(PartialEq)]
 
 enum ThrusterState {
@@ -10,10 +10,10 @@ enum ThrusterState {
 }
 
 use crate::controls::Controls;
-use projectile::Projectile;
 use asteroids::Asteroid;
-use raylib::prelude::*;
+use projectile::Projectile;
 use rand::{Rng, RngExt};
+use raylib::prelude::*;
 
 struct Player {
     position: Vector2,
@@ -23,6 +23,7 @@ struct Player {
     thruster_state: ThrusterState,
     thruster_timer: f32,
     health: u8,
+    invincible_timer: f32,
 }
 
 impl Player {
@@ -64,6 +65,10 @@ impl Player {
             self.thruster_timer = 0.0;
         }
 
+        if self.invincible_timer > 0.0 {
+            self.invincible_timer -= dt;
+        }
+
         self.velocity *= 0.99;
         self.position += self.velocity * dt;
 
@@ -81,16 +86,19 @@ impl Player {
         }
     }
 
-    fn _take_damage(&mut self) {
-        self.health = self.health.saturating_sub(1);
+    fn take_damage(&mut self) {
+        if self.invincible_timer <= 0.0 {
+            self.health = self.health.saturating_sub(1);
+            self.invincible_timer = 2.0; // ship is invincible for 2s after hit
+        }
     }
 
-    fn _is_alive(&self) -> bool {
+    fn is_alive(&self) -> bool {
         return self.health > 0;
     }
 }
 
-fn check_collision(player : &Player, asteroid : &Asteroid) -> bool {
+fn check_collision(player: &Player, asteroid: &Asteroid) -> bool {
     let dx = player.position.x - asteroid.position.x;
     let dy = player.position.y - asteroid.position.y;
     let distance = (dx * dx + dy * dy).sqrt();
@@ -120,6 +128,7 @@ fn main() {
         thruster_state: ThrusterState::Off,
         thruster_timer: 0.0,
         health: 3,
+        invincible_timer: 0.0,
     };
 
     let texture_static = rl.load_texture(&thread, "assets/spaceship.png").unwrap();
@@ -149,13 +158,19 @@ fn main() {
 
     let controls = Controls::new(None, None, None, None, None, None, None);
 
-    let mut asteroids : Vec<Asteroid> = Vec::new();
+    let mut asteroids: Vec<Asteroid> = Vec::new();
     let mut rng = rand::rng();
 
-    for i in 0..=2 {
+    for _ in 0..=2 {
         asteroids.push(Asteroid::new(
-            Vector2::new(rng.random_range(0.0..window_width as f32), rng.random_range(0.0..window_height as f32)),
-            Vector2::new(rng.random_range(-100.0..100.0), rng.random_range(-100.0..100.0)),
+            Vector2::new(
+                rng.random_range(0.0..window_width as f32),
+                rng.random_range(0.0..window_height as f32),
+            ),
+            Vector2::new(
+                rng.random_range(-100.0..100.0),
+                rng.random_range(-100.0..100.0),
+            ),
             60.0,
             64.0,
             64.0,
@@ -166,17 +181,21 @@ fn main() {
 
     while !rl.window_should_close() {
         audio.update_music_stream(&mut background_music);
-        if rl.is_key_pressed(controls.mute){
-            audio.set_master_volume(if !muted {0.0} else {volume});
-            muted=!muted;
+        if rl.is_key_pressed(controls.mute) {
+            audio.set_master_volume(if !muted { 0.0 } else { volume });
+            muted = !muted;
         }
-        if rl.is_key_down(controls.volume_up){
-            volume = (volume+0.01).min(1.0);
-            if !muted {audio.set_master_volume(volume);}
+        if rl.is_key_down(controls.volume_up) {
+            volume = (volume + 0.01).min(1.0);
+            if !muted {
+                audio.set_master_volume(volume);
+            }
         }
-        if rl.is_key_down(controls.volume_down){
-            volume=(volume-0.01).max(0.0);
-            if !muted {audio.set_master_volume(volume);}
+        if rl.is_key_down(controls.volume_down) {
+            volume = (volume - 0.01).max(0.0);
+            if !muted {
+                audio.set_master_volume(volume);
+            }
         }
         if player.thruster_state != ThrusterState::Off {
             audio.update_music_stream(&mut sfx_thruster);
@@ -205,8 +224,8 @@ fn main() {
 
         for x in &mut asteroids {
             x.update(dt, window_width, window_height);
-            if player._is_alive() && check_collision(&player, x) {
-                player._take_damage();
+            if player.is_alive() && check_collision(&player, x) {
+                player.take_damage();
             }
         }
 
