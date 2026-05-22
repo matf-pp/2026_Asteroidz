@@ -10,6 +10,13 @@ pub enum ThrusterState {
     Triple,
 }
 
+#[derive(PartialEq)]
+enum GameScreen {
+    MainMenu,
+    Gameplay,
+    Paused, //not needed for now, but probably will implement later
+}
+
 use crate::{audio_manager::AudioManager, controls::Controls};
 use asteroids::Asteroid;
 use projectile::Projectile;
@@ -112,9 +119,11 @@ fn main() {
 
     let (mut rl, thread) = raylib::init()
         .size(window_width, window_height)
-        .title("Hello, World!")
+        .title("ASTEROIDZ")
         .vsync()
         .build();
+
+    let mut active_screen=GameScreen::MainMenu;
 
     let mut player = Player {
         position: Vector2::new(100.0, 100.0),
@@ -129,6 +138,13 @@ fn main() {
 
     let mut audio_manager = AudioManager::new(&thread);
 
+    //TODO: replace hardcoded values to allow for scaling
+    let button_rect = Rectangle::new(
+        (window_width as f32 / 2.0) - 100.0,
+        (window_height as f32 / 2.0) + 20.0, 
+        200.0,
+        50.0,
+    );
     let texture_static = rl.load_texture(&thread, "assets/spaceship.png").unwrap();
     let texture_1thruster: Texture2D = rl.load_texture(&thread, "assets/1thruster.png").unwrap();
     let texture_3thruster: Texture2D = rl.load_texture(&thread, "assets/3thruster.png").unwrap();
@@ -162,67 +178,102 @@ fn main() {
     }
 
     while !rl.window_should_close() {
-        player.update(&rl, window_width, window_height, &controls);
+        //UPDATE
         audio_manager.update(&rl, &controls, &player.thruster_state);
-        
-        if rl.is_key_pressed(controls.shoot) {
-            projectiles.push(Projectile::new(player.position, player.angle));
-            audio_manager.play_laser();
-        }
 
-        let dt = rl.get_frame_time();
-        for proj in &mut projectiles {
-            proj.update(dt);
-        }
+        match active_screen {
+            GameScreen::MainMenu=>{
+                let mouse_pos = rl.get_mouse_position();
 
-        for x in &mut asteroids {
-            x.update(dt, window_width, window_height);
-            if player.is_alive() && check_collision(&player, x) {
-                player.take_damage();
+                if button_rect.check_collision_point_rec(mouse_pos) {
+                    if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                        active_screen = GameScreen::Gameplay;
+                    }
+                }
+            }
+            GameScreen::Gameplay=>{
+                player.update(&rl, window_width, window_height, &controls);
+                if rl.is_key_pressed(controls.shoot) {
+                    projectiles.push(Projectile::new(player.position, player.angle));
+                    audio_manager.play_laser();
+                }
+
+                let dt = rl.get_frame_time();
+                for proj in &mut projectiles {
+                    proj.update(dt);
+                }
+
+                for x in &mut asteroids {
+                    x.update(dt, window_width, window_height);
+                    if player.is_alive() && check_collision(&player, x) {
+                        player.take_damage();
+                    }
+                }
+            }
+            GameScreen::Paused=>{
+                //future pause update logic, nothing so far
             }
         }
 
+        //DRAW
+        
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::WHITE);
         // d.draw_texture(&texture, player.position.x as i32, player.position.y as i32, Color::WHITE);
 
-        let texture_current = match player.thruster_state {
-            ThrusterState::Off => &texture_static,
-            ThrusterState::Single => &texture_1thruster,
-            ThrusterState::Triple => &texture_3thruster,
-        };
+        match active_screen{
+            GameScreen::MainMenu=>{
+                //TODO: replace hardcoded values to allow for rescaling
+                d.draw_text("BOTTOM TEXT", ((window_width as f32 / 2.0) - 115.0) as i32,((window_height as f32 / 2.0) - 100.0) as i32, 30, Color::BLACK);
+                d.draw_rectangle_rec(&button_rect, Color::GREEN);
+                d.draw_rectangle_lines_ex(&button_rect, 2, Color::BLACK);
+                d.draw_text("START GAME", (button_rect.x + 35.0) as i32, (button_rect.y + 15.0) as i32, 20, Color::BLACK);
+            }
+            GameScreen::Gameplay=>{
+                let texture_current = match player.thruster_state {
+                    ThrusterState::Off => &texture_static,
+                    ThrusterState::Single => &texture_1thruster,
+                    ThrusterState::Triple => &texture_3thruster,
+                };
 
-        for proj in &projectiles {
-            proj.draw(&mut d, &projectile_texture);
-        }
+                for proj in &projectiles {
+                    proj.draw(&mut d, &projectile_texture);
+                }
 
-        d.draw_texture_pro(
-            &texture_current,
-            Rectangle::new(
+                d.draw_texture_pro(
+                    &texture_current,
+                Rectangle::new(
                 0.0,
                 0.0,
                 texture_current.width as f32,
                 texture_current.height as f32,
-            ),
+                ),
             Rectangle::new(
                 player.position.x,
                 player.position.y,
                 player.box_size.x,
                 player.box_size.y,
-            ),
+                ),
             Vector2::new(player.box_size.x / 2.0, player.box_size.y / 2.0),
             player.angle.to_degrees(),
             Color::WHITE,
-        );
+                );
 
-        for i in 0..player.health {
-            // draw healthbar
-            d.draw_texture(&heart_texture, 10 + (i as i32 * 25), 10, Color::WHITE);
+                for i in 0..player.health {
+                    // draw healthbar
+                    d.draw_texture(&heart_texture, 10 + (i as i32 * 25), 10, Color::WHITE);
+                }
+
+                for ast in &asteroids {
+                    ast.draw(&mut d, &asteroid_texture);
+                }
+            }
+            GameScreen::Paused => {
+                //eventual pause drawing
+            }
         }
 
-        for ast in &asteroids {
-            ast.draw(&mut d, &asteroid_texture);
-        }
+        
     }
 }
