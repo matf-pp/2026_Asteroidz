@@ -260,6 +260,22 @@ fn update(
         GameScreen::Gameplay => {
             player.update(&rl, window_width, window_height, &controls);
 
+            projectiles.retain(|proj| {
+                proj.position.x >= -10.0
+                    && proj.position.x <= window_width as f32 + 10.0
+                    && proj.position.y >= -10.0
+                    && proj.position.y <= window_height as f32 + 10.0
+            });
+
+            asteroids.retain(|asrd| {
+                asrd.position.x >= -10.0
+                    && asrd.position.x <= window_width as f32 + 10.0
+                    && asrd.position.y >= -10.0
+                    && asrd.position.y <= window_height as f32 + 10.0
+            });
+
+            //println!("theres {} asteroids...", asteroids.len());
+
             let dt = rl.get_frame_time();
             for proj in projectiles {
                 proj.update(dt);
