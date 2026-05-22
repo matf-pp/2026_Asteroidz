@@ -1,15 +1,16 @@
 mod asteroids;
 mod controls;
 mod projectile;
+mod audio_manager;
 #[derive(PartialEq)]
 
-enum ThrusterState {
+pub enum ThrusterState {
     Off,
     Single,
     Triple,
 }
 
-use crate::controls::Controls;
+use crate::{audio_manager::AudioManager, controls::Controls};
 use asteroids::Asteroid;
 use projectile::Projectile;
 use rand::{Rng, RngExt};
@@ -115,11 +116,6 @@ fn main() {
         .vsync()
         .build();
 
-    let mut audio = RaylibAudio::init_audio_device();
-    let mut volume = 1.0;
-    let mut muted = false;
-    audio.set_master_volume(volume);
-
     let mut player = Player {
         position: Vector2::new(100.0, 100.0),
         velocity: Vector2::new(0.0, 0.0),
@@ -131,28 +127,14 @@ fn main() {
         invincible_timer: 0.0,
     };
 
+    let mut audio_manager = AudioManager::new(&thread);
+
     let texture_static = rl.load_texture(&thread, "assets/spaceship.png").unwrap();
     let texture_1thruster: Texture2D = rl.load_texture(&thread, "assets/1thruster.png").unwrap();
     let texture_3thruster: Texture2D = rl.load_texture(&thread, "assets/3thruster.png").unwrap();
     let heart_texture = rl.load_texture(&thread, "assets/heart.png").unwrap();
     let projectile_texture = rl.load_texture(&thread, "assets/projectile.png").unwrap();
     let asteroid_texture = rl.load_texture(&thread, "assets/asteroid.png").unwrap();
-
-    let mut background_music =
-        Music::load_music_stream(&thread, "assets/test_background.mp3").unwrap();
-    background_music.looping = true;
-    audio.play_music_stream(&mut background_music);
-    let mut sfx_thruster = Music::load_music_stream(&thread, "assets/test_thruster.mp3").unwrap();
-    sfx_thruster.looping = true;
-    let mut is_thruster_sfx_playing = false; //ugly, will maybe find something better later
-    let laser_pool = [
-        Sound::load_sound("assets/test_laser.wav").unwrap(),
-        Sound::load_sound("assets/test_laser.wav").unwrap(),
-        Sound::load_sound("assets/test_laser.wav").unwrap(),
-        Sound::load_sound("assets/test_laser.wav").unwrap(),
-        Sound::load_sound("assets/test_laser.wav").unwrap(),
-    ]; //doesn't seem to be any better solution to allow overlapping
-    let mut current_laser = 0;
 
     let mut projectiles: Vec<Projectile> = Vec::new();
 
@@ -180,41 +162,12 @@ fn main() {
     }
 
     while !rl.window_should_close() {
-        audio.update_music_stream(&mut background_music);
-        if rl.is_key_pressed(controls.mute) {
-            audio.set_master_volume(if !muted { 0.0 } else { volume });
-            muted = !muted;
-        }
-        if rl.is_key_down(controls.volume_up) {
-            volume = (volume + 0.01).min(1.0);
-            if !muted {
-                audio.set_master_volume(volume);
-            }
-        }
-        if rl.is_key_down(controls.volume_down) {
-            volume = (volume - 0.01).max(0.0);
-            if !muted {
-                audio.set_master_volume(volume);
-            }
-        }
-        if player.thruster_state != ThrusterState::Off {
-            audio.update_music_stream(&mut sfx_thruster);
-            if !is_thruster_sfx_playing {
-                audio.play_music_stream(&mut sfx_thruster);
-                is_thruster_sfx_playing = true;
-            }
-        } else {
-            if is_thruster_sfx_playing {
-                audio.stop_music_stream(&mut sfx_thruster);
-                is_thruster_sfx_playing = false;
-            }
-        }
         player.update(&rl, window_width, window_height, &controls);
+        audio_manager.update(&rl, &controls, &player.thruster_state);
+        
         if rl.is_key_pressed(controls.shoot) {
             projectiles.push(Projectile::new(player.position, player.angle));
-
-            audio.play_sound(&laser_pool[current_laser]);
-            current_laser = (current_laser + 1) % laser_pool.len();
+            audio_manager.play_laser();
         }
 
         let dt = rl.get_frame_time();
