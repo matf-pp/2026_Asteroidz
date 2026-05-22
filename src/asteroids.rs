@@ -1,3 +1,4 @@
+use crate::player::Player;
 use raylib::prelude::*;
 pub struct Asteroid {
     pub position: Vector2,
@@ -10,7 +11,15 @@ pub struct Asteroid {
 }
 
 impl Asteroid {
-    pub fn new(position: Vector2, velocity: Vector2, hitbox_radius: f32, width: f32, height: f32, angle: f32, rotation_speed: f32) -> Self {
+    pub fn new(
+        position: Vector2,
+        velocity: Vector2,
+        hitbox_radius: f32,
+        width: f32,
+        height: f32,
+        angle: f32,
+        rotation_speed: f32,
+    ) -> Self {
         Self {
             position,
             velocity,
@@ -18,7 +27,7 @@ impl Asteroid {
             width,
             height,
             angle,
-            rotation_speed
+            rotation_speed,
         }
     }
 
@@ -50,4 +59,12 @@ impl Asteroid {
             Color::WHITE,
         );
     }
+
+    pub fn check_collision_with_player(player: &Player, asteroid: &Asteroid) -> bool {
+        let dx = player.position.x - asteroid.position.x;
+        let dy = player.position.y - asteroid.position.y;
+        let distance = (dx * dx + dy * dy).sqrt();
+        return distance < asteroid.hitbox_radius + player.box_size.x.max(player.box_size.y) / 2.0;
+    }
 }
+
