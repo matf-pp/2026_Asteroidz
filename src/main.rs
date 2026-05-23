@@ -12,6 +12,9 @@ enum GameScreen {
     Paused, //not needed for now, but probably will implement later
 }
 
+use std::collections::HashSet;
+use std::hash::Hash;
+
 use crate::player::ThrusterState;
 use crate::{audio_manager::AudioManager, controls::Controls};
 use asteroids::Asteroid;
@@ -75,6 +78,7 @@ fn main() {
     let mut rng = rand::rng();
 
     for _ in 0..=2 {
+        let dimension : f32 = 2.0_f32.powf(rng.random_range(6.0..=6.0));
         asteroids.push(Asteroid::new(
             Vector2::new(
                 rng.random_range(0.0..window_width as f32),
@@ -84,9 +88,9 @@ fn main() {
                 rng.random_range(-100.0..100.0),
                 rng.random_range(-100.0..100.0),
             ),
-            60.0,
-            64.0,
-            64.0,
+            0.9 * dimension,
+            dimension,
+            dimension,
             rng.random_range(0.0..360.0),
             rng.random_range(-2.0..2.0),
         ));
@@ -260,21 +264,22 @@ fn update(
         GameScreen::Gameplay => {
             player.update(&rl, window_width, window_height, &controls);
 
-            projectiles.retain(|proj| {
-                proj.position.x >= -10.0
-                    && proj.position.x <= window_width as f32 + 10.0
-                    && proj.position.y >= -10.0
-                    && proj.position.y <= window_height as f32 + 10.0
-            });
+            // projectiles.retain(|proj| {
+            //     proj.position.x >= -10.0
+            //         && proj.position.x <= window_width as f32 + 10.0
+            //         && proj.position.y >= -10.0
+            //         && proj.position.y <= window_height as f32 + 10.0
+            // });
 
-            asteroids.retain(|asrd| {
-                asrd.position.x >= -10.0
-                    && asrd.position.x <= window_width as f32 + 10.0
-                    && asrd.position.y >= -10.0
-                    && asrd.position.y <= window_height as f32 + 10.0
-            });
+            // asteroids.retain(|asrd| {
+            //     asrd.position.x >= -10.0
+            //         && asrd.position.x <= window_width as f32 + 10.0
+            //         && asrd.position.y >= -10.0
+            //         && asrd.position.y <= window_height as f32 + 10.0
+            // });
 
             //println!("theres {} asteroids...", asteroids.len());
+            destroy_asteroids(asteroids, projectiles);
 
             let dt = rl.get_frame_time();
             for proj in projectiles {
@@ -290,4 +295,72 @@ fn update(
         }
         _ => {}
     }
+}
+
+fn destroy_asteroids(asteroids: &mut Vec<Asteroid>, projectiles: &mut Vec<Projectile>) {
+    let mut proj_to_remove: HashSet<usize> = HashSet::new();
+    let mut ast_to_remove: HashSet<usize> = HashSet::new();
+
+    let mut rng = rand::rng();
+
+    for (pi, proj) in projectiles.iter().enumerate() {
+        for (ai, ast) in asteroids.iter().enumerate() {
+            if Projectile::check_collision_with_asteroid(proj, ast) {
+                proj_to_remove.insert(pi);
+                ast_to_remove.insert(ai);
+            }
+        }
+    }
+
+    let mut new_asteroids: Vec<Asteroid> = Vec::new();
+    let mut new_projectiles: Vec<Projectile> = Vec::new();
+
+    for i in 0..asteroids.len() {
+        if ast_to_remove.contains(&i) {
+            new_asteroids.extend(split_asteroid(&asteroids[i], &mut rng));
+        } else {
+            new_asteroids.push(asteroids[i].clone());
+        }
+    }
+
+    for i in 0..projectiles.len() {
+        if !proj_to_remove.contains(&i) {
+            new_projectiles.push(projectiles[i].clone());
+        }
+    }
+
+    *asteroids = new_asteroids;
+    *projectiles = new_projectiles;
+}
+
+fn split_asteroid(ast: &Asteroid, rng: &mut impl Rng) -> Vec<Asteroid> {
+    let angle_separation = rng.random_range(20.0_f32..60.0_f32).to_radians();
+    let speed = (ast.velocity.x * ast.velocity.x + ast.velocity.y * ast.velocity.y).sqrt();
+    let new_speed : f32 = speed * 1.2;
+    let normalized : Vector2 = Vector2::new(ast.velocity.x / speed, ast.velocity.y / speed);
+
+    let new_dimension = ast.width / 2.0;
+
+    let rotate_vector = |v: Vector2, angle: f32| -> Vector2 {
+        Vector2::new(
+            v.x * angle.cos() - v.y * angle.sin(),
+            v.x * angle.sin() + v.y * angle.cos(),
+        )
+    };
+
+    if new_dimension < 32.0 {
+        return Vec::new();
+    }
+
+    [-angle_separation, angle_separation].iter().map(|&angle| {
+        Asteroid::new(
+            ast.position,
+            rotate_vector(normalized, angle) * new_speed,
+            0.9 * new_dimension,
+            new_dimension,
+            new_dimension,
+            rng.random_range(0.0..360.0),
+            rng.random_range(-2.0..2.0),
+        )
+    }).collect()
 }

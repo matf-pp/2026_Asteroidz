@@ -1,5 +1,7 @@
 use crate::player::Player;
 use raylib::prelude::*;
+
+#[derive(Clone)]
 pub struct Asteroid {
     pub position: Vector2,
     pub velocity: Vector2,

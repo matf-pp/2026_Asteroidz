@@ -1,4 +1,7 @@
 use raylib::prelude::*;
+use crate::asteroids::Asteroid;
+
+#[derive(Clone)]
 pub struct Projectile {
     pub position: Vector2,
     velocity: Vector2,
@@ -33,5 +36,16 @@ impl Projectile {
             self.angle.to_degrees() + 90.0,
             Color::WHITE,
         );
+    }
+
+    pub fn check_collision_with_asteroid(proj: &Projectile, ast: &Asteroid) -> bool {
+        let tip = proj.position + Vector2::new(
+            proj.angle.sin() * proj.length / 2.0,
+            -proj.angle.cos() * proj.length / 2.0,
+        );
+
+        let dx = tip.x - ast.position.x;
+        let dy = tip.y - ast.position.y;
+        dx * dx + dy * dy < ast.hitbox_radius * ast.hitbox_radius
     }
 }
