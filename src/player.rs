@@ -18,13 +18,14 @@ pub struct Player {
     pub thruster_timer: f32,
     pub health: u8,
     pub invincible_timer: f32,
+    pub proj_delay: f32,
 }
 
 impl Player {
     const SPEED: f32 = 1.00;
     const ROTATION_SPEED: f32 = 2.5;
     const ANIMATION_SPEED: f32 = 0.1;
-
+    const PROJ_DELAY: f32 = 0.5;
     pub fn new(
         position: Vector2,
         velocity: Vector2,
@@ -41,6 +42,7 @@ impl Player {
             thruster_timer: 0.0,
             health: 3,
             invincible_timer: 0.0,
+            proj_delay: 0.0,
         }
     }
     pub fn update(
@@ -81,6 +83,10 @@ impl Player {
             self.invincible_timer -= dt;
         }
 
+        if self.proj_delay > 0.0 {
+            self.proj_delay -= dt;
+        }
+
         self.velocity *= 0.99;
         self.position += self.velocity * dt;
 
@@ -107,5 +113,9 @@ impl Player {
 
     pub fn is_alive(&self) -> bool {
         return self.health > 0;
+    }
+
+    pub fn reset_proj_timer(&mut self) {
+        self.proj_delay = Player::PROJ_DELAY;
     }
 }

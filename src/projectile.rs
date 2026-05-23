@@ -1,5 +1,5 @@
-use raylib::prelude::*;
 use crate::asteroids::Asteroid;
+use raylib::prelude::*;
 
 #[derive(Clone)]
 pub struct Projectile {
@@ -12,7 +12,6 @@ pub struct Projectile {
 
 impl Projectile {
     const SPEED: f32 = 400.0;
-
     pub fn new(position: Vector2, angle: f32) -> Self {
         Self {
             position,
@@ -39,10 +38,11 @@ impl Projectile {
     }
 
     pub fn check_collision_with_asteroid(proj: &Projectile, ast: &Asteroid) -> bool {
-        let tip = proj.position + Vector2::new(
-            proj.angle.sin() * proj.length / 2.0,
-            -proj.angle.cos() * proj.length / 2.0,
-        );
+        let tip = proj.position
+            + Vector2::new(
+                proj.angle.sin() * proj.length / 2.0,
+                -proj.angle.cos() * proj.length / 2.0,
+            );
 
         let dx = tip.x - ast.position.x;
         let dy = tip.y - ast.position.y;

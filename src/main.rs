@@ -13,7 +13,6 @@ enum GameScreen {
 }
 
 use std::collections::HashSet;
-use std::hash::Hash;
 
 use crate::player::ThrusterState;
 use crate::{audio_manager::AudioManager, controls::Controls};
@@ -78,7 +77,7 @@ fn main() {
     let mut rng = rand::rng();
 
     for _ in 0..=2 {
-        let dimension : f32 = 2.0_f32.powf(rng.random_range(6.0..=6.0));
+        let dimension: f32 = 2.0_f32.powf(rng.random_range(6.0..=6.0));
         asteroids.push(Asteroid::new(
             Vector2::new(
                 rng.random_range(0.0..window_width as f32),
@@ -238,8 +237,11 @@ fn poll_events(
         }
         GameScreen::Gameplay => {
             if rl.is_key_pressed(controls.shoot) {
-                projectiles.push(Projectile::new(player.position, player.angle));
-                audio_manager.play_laser();
+                if player.proj_delay <= 0.0 {
+                    projectiles.push(Projectile::new(player.position, player.angle));
+                    audio_manager.play_laser();
+                    player.reset_proj_timer();
+                }
             }
         }
         GameScreen::Paused => {
@@ -336,8 +338,8 @@ fn destroy_asteroids(asteroids: &mut Vec<Asteroid>, projectiles: &mut Vec<Projec
 fn split_asteroid(ast: &Asteroid, rng: &mut impl Rng) -> Vec<Asteroid> {
     let angle_separation = rng.random_range(20.0_f32..60.0_f32).to_radians();
     let speed = (ast.velocity.x * ast.velocity.x + ast.velocity.y * ast.velocity.y).sqrt();
-    let new_speed : f32 = speed * 1.2;
-    let normalized : Vector2 = Vector2::new(ast.velocity.x / speed, ast.velocity.y / speed);
+    let new_speed: f32 = speed * 1.2;
+    let normalized: Vector2 = Vector2::new(ast.velocity.x / speed, ast.velocity.y / speed);
 
     let new_dimension = ast.width / 2.0;
 
@@ -352,15 +354,19 @@ fn split_asteroid(ast: &Asteroid, rng: &mut impl Rng) -> Vec<Asteroid> {
         return Vec::new();
     }
 
-    [-angle_separation, angle_separation].iter().map(|&angle| {
-        Asteroid::new(
-            ast.position,
-            rotate_vector(normalized, angle) * new_speed,
-            0.9 * new_dimension,
-            new_dimension,
-            new_dimension,
-            rng.random_range(0.0..360.0),
-            rng.random_range(-2.0..2.0),
-        )
-    }).collect()
+    [-angle_separation, angle_separation]
+        .iter()
+        .map(|&angle| {
+            Asteroid::new(
+                ast.position,
+                rotate_vector(normalized, angle) * new_speed,
+                0.9 * new_dimension,
+                new_dimension,
+                new_dimension,
+                rng.random_range(0.0..360.0),
+                rng.random_range(-2.0..2.0),
+            )
+        })
+        .collect()
 }
+
