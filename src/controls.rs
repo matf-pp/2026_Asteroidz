@@ -11,6 +11,7 @@ pub struct Controls {
     pub volume_down: KeyboardKey,
 
     currently_rebinding: Rebinding,
+    display_rebind_err: bool,
 
     button_rect_front: Rectangle,
     button_rect_left: Rectangle,
@@ -51,6 +52,7 @@ impl Controls {
             volume_up: volume_up.unwrap_or(KEY_F3),
             volume_down: volume_down.unwrap_or(KEY_F2),
             currently_rebinding: Rebinding::None,
+            display_rebind_err: false,
 
             button_rect_front: Rectangle::new(
                 ((window_width as f32 / 2.0) + 150.0) as f32,
@@ -93,14 +95,19 @@ impl Controls {
             Rebinding::Forward | Rebinding::Left | Rebinding::Right | Rebinding::Shoot => {
                 if let Some(pressed) = rl.get_key_pressed_number() {
                     let key = Controls::code_to_key(pressed);
-                    match controls.currently_rebinding {
-                        Rebinding::Forward => controls.forward = key,
-                        Rebinding::Left => controls.left = key,
-                        Rebinding::Right => controls.right = key,
-                        Rebinding::Shoot => controls.shoot = key,
-                        _ => {}
+                    if !controls.key_already_in_use(key, &controls.currently_rebinding) {
+                        match controls.currently_rebinding {
+                            Rebinding::Forward => controls.forward = key,
+                            Rebinding::Left => controls.left = key,
+                            Rebinding::Right => controls.right = key,
+                            Rebinding::Shoot => controls.shoot = key,
+                            _ => {}
+                        }
+                        controls.currently_rebinding = Rebinding::None;
+                        controls.display_rebind_err = false;
+                    } else {
+                        controls.display_rebind_err = true;
                     }
-                    controls.currently_rebinding = Rebinding::None;
                 }
             }
             Rebinding::None => {
@@ -136,6 +143,16 @@ impl Controls {
                     }
                 }
             }
+        }
+    }
+
+    fn key_already_in_use(&self, key: KeyboardKey, rebinding: &Rebinding) -> bool {
+        match rebinding {
+            Rebinding::Forward => self.left == key || self.right == key || self.shoot == key,
+            Rebinding::Left => self.forward == key || self.right == key || self.shoot == key,
+            Rebinding::Right => self.left == key || self.forward == key || self.shoot == key,
+            Rebinding::Shoot => self.left == key || self.right == key || self.forward == key,
+            _ => false,
         }
     }
     pub fn draw_menu(d: &mut RaylibDrawHandle, controls: &mut Controls) {
@@ -241,5 +258,15 @@ impl Controls {
             20,
             Color::BLACK,
         );
+
+        if controls.display_rebind_err {
+            d.draw_text(
+                "Key already in use! Try another key.",
+                ((controls.window_width as f32 / 2.0) - 200.0) as i32,
+                ((controls.window_height as f32 / 2.0) + 160.0) as i32,
+                20,
+                Color::RED,
+            );
+        }
     }
 }
