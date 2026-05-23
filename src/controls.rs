@@ -1,5 +1,6 @@
 use raylib::consts::KeyboardKey::*;
 use raylib::prelude::*;
+
 pub struct Controls {
     pub left: KeyboardKey,
     pub right: KeyboardKey,
@@ -8,6 +9,25 @@ pub struct Controls {
     pub mute: KeyboardKey,
     pub volume_up: KeyboardKey,
     pub volume_down: KeyboardKey,
+
+    currently_rebinding: Rebinding,
+
+    button_rect_front: Rectangle,
+    button_rect_left: Rectangle,
+    button_rect_right: Rectangle,
+    button_rect_shoot: Rectangle,
+
+    window_width: i32,
+    window_height: i32,
+}
+
+#[derive(PartialEq)]
+enum Rebinding {
+    None,
+    Forward,
+    Left,
+    Right,
+    Shoot,
 }
 
 impl Controls {
@@ -19,15 +39,207 @@ impl Controls {
         mute: Option<KeyboardKey>,
         volume_up: Option<KeyboardKey>,
         volume_down: Option<KeyboardKey>,
+        window_width: i32,
+        window_height: i32,
     ) -> Self {
         Self {
             left: left.unwrap_or(KEY_LEFT),
             right: right.unwrap_or(KEY_RIGHT),
             forward: forward.unwrap_or(KEY_UP),
             shoot: shoot.unwrap_or(KEY_S),
-            mute: mute.unwrap_or( KEY_M),
+            mute: mute.unwrap_or(KEY_M),
             volume_up: volume_up.unwrap_or(KEY_F3),
             volume_down: volume_down.unwrap_or(KEY_F2),
+            currently_rebinding: Rebinding::None,
+
+            button_rect_front: Rectangle::new(
+                ((window_width as f32 / 2.0) + 150.0) as f32,
+                (window_height as f32 / 2.0 - 180.0) as f32,
+                125.0,
+                50.0,
+            ),
+            button_rect_left: Rectangle::new(
+                ((window_width as f32 / 2.0) + 150.0) as f32,
+                (window_height as f32 / 2.0 - 100.0) as f32,
+                125.0,
+                50.0,
+            ),
+            button_rect_right: Rectangle::new(
+                ((window_width as f32 / 2.0) + 150.0) as f32,
+                (window_height as f32 / 2.0 - 20.0) as f32,
+                125.0,
+                50.0,
+            ),
+            button_rect_shoot: Rectangle::new(
+                ((window_width as f32 / 2.0) + 150.0) as f32,
+                (window_height as f32 / 2.0 + 60.0) as f32,
+                125.0,
+                50.0,
+            ),
+
+            window_width: window_width,
+            window_height: window_height,
         }
+    }
+    fn key_to_string(key: KeyboardKey) -> String {
+        format!("{:?}", key).replace("KEY_", "")
+    }
+
+    fn code_to_key(code: u32) -> KeyboardKey {
+        unsafe { std::mem::transmute(code as i32) }
+    }
+    pub fn poll_events(rl: &mut RaylibHandle, controls: &mut Controls) {
+        match controls.currently_rebinding {
+            Rebinding::Forward | Rebinding::Left | Rebinding::Right | Rebinding::Shoot => {
+                if let Some(pressed) = rl.get_key_pressed_number() {
+                    let key = Controls::code_to_key(pressed);
+                    match controls.currently_rebinding {
+                        Rebinding::Forward => controls.forward = key,
+                        Rebinding::Left => controls.left = key,
+                        Rebinding::Right => controls.right = key,
+                        Rebinding::Shoot => controls.shoot = key,
+                        _ => {}
+                    }
+                    controls.currently_rebinding = Rebinding::None;
+                }
+            }
+            Rebinding::None => {
+                let mouse_pos = rl.get_mouse_position();
+
+                if controls
+                    .button_rect_front
+                    .check_collision_point_rec(mouse_pos)
+                {
+                    if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                        controls.currently_rebinding = Rebinding::Forward;
+                    }
+                } else if controls
+                    .button_rect_left
+                    .check_collision_point_rec(mouse_pos)
+                {
+                    if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                        controls.currently_rebinding = Rebinding::Left;
+                    }
+                } else if controls
+                    .button_rect_right
+                    .check_collision_point_rec(mouse_pos)
+                {
+                    if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                        controls.currently_rebinding = Rebinding::Right;
+                    }
+                } else if controls
+                    .button_rect_shoot
+                    .check_collision_point_rec(mouse_pos)
+                {
+                    if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                        controls.currently_rebinding = Rebinding::Shoot;
+                    }
+                }
+            }
+        }
+    }
+    pub fn draw_menu(d: &mut RaylibDrawHandle, controls: &mut Controls) {
+        d.draw_text(
+            "Move forward: ",
+            ((controls.window_width as f32 / 2.0) - 200.0) as i32,
+            (controls.window_height as f32 / 2.0 - 180.0) as i32,
+            25,
+            Color::BLACK,
+        );
+        d.draw_text(
+            "Turn left: ",
+            ((controls.window_width as f32 / 2.0) - 200.0) as i32,
+            (controls.window_height as f32 / 2.0 - 100.0) as i32,
+            25,
+            Color::BLACK,
+        );
+        d.draw_text(
+            "Turn right: ",
+            ((controls.window_width as f32 / 2.0) - 200.0) as i32,
+            (controls.window_height as f32 / 2.0 - 20.0) as i32,
+            25,
+            Color::BLACK,
+        );
+        d.draw_text(
+            "Shoot: ",
+            ((controls.window_width as f32 / 2.0) - 200.0) as i32,
+            (controls.window_height as f32 / 2.0 + 60.0) as i32,
+            25,
+            Color::BLACK,
+        );
+
+        d.draw_rectangle_lines_ex(
+            controls.button_rect_front,
+            2,
+            if controls.currently_rebinding == Rebinding::Forward {
+                Color::ORANGE
+            } else {
+                Color::PURPLE
+            },
+        );
+        d.draw_rectangle_lines_ex(
+            controls.button_rect_left,
+            2,
+            if controls.currently_rebinding == Rebinding::Left {
+                Color::ORANGE
+            } else {
+                Color::PURPLE
+            },
+        );
+        d.draw_rectangle_lines_ex(
+            controls.button_rect_right,
+            2,
+            if controls.currently_rebinding == Rebinding::Right {
+                Color::ORANGE
+            } else {
+                Color::PURPLE
+            },
+        );
+        d.draw_rectangle_lines_ex(
+            controls.button_rect_shoot,
+            2,
+            if controls.currently_rebinding == Rebinding::Shoot {
+                Color::ORANGE
+            } else {
+                Color::PURPLE
+            },
+        );
+
+        d.draw_text(
+            &Controls::key_to_string(controls.forward),
+            (controls.button_rect_front.x + 35.0) as i32,
+            (controls.button_rect_front.y + 15.0) as i32,
+            20,
+            Color::BLACK,
+        );
+        d.draw_text(
+            &Controls::key_to_string(controls.left),
+            (controls.button_rect_left.x + 35.0) as i32,
+            (controls.button_rect_left.y + 15.0) as i32,
+            20,
+            Color::BLACK,
+        );
+        d.draw_text(
+            &Controls::key_to_string(controls.right),
+            (controls.button_rect_right.x + 35.0) as i32,
+            (controls.button_rect_right.y + 15.0) as i32,
+            20,
+            Color::BLACK,
+        );
+        d.draw_text(
+            &Controls::key_to_string(controls.shoot),
+            (controls.button_rect_shoot.x + 35.0) as i32,
+            (controls.button_rect_shoot.y + 15.0) as i32,
+            20,
+            Color::BLACK,
+        );
+
+        d.draw_text(
+            "Press Backspace to return to main menu...",
+            ((controls.window_width as f32 / 2.0) - 200.0) as i32,
+            ((controls.window_height as f32 / 2.0) + 120.0) as i32,
+            20,
+            Color::BLACK,
+        );
     }
 }

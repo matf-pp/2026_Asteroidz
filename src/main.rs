@@ -9,6 +9,8 @@ mod textures;
 enum GameScreen {
     MainMenu,
     Gameplay,
+
+    ControlMenu,
     Paused, //not needed for now, but probably will implement later
 }
 
@@ -45,10 +47,16 @@ fn main() {
     let mut audio_manager = AudioManager::new(&thread);
 
     //TODO: replace hardcoded values to allow for scaling
-    let button_rect = Rectangle::new(
+    let button_rect_start = Rectangle::new(
         (window_width as f32 / 2.0) - 100.0,
-        (window_height as f32 / 2.0) + 20.0,
+        (window_height as f32 / 2.0) + 10.0,
         200.0,
+        50.0,
+    );
+    let button_rect_controls = Rectangle::new(
+        (window_width as f32 / 2.0) - 90.0,
+        (window_height as f32 / 2.0) + 80.0,
+        180.0,
         50.0,
     );
 
@@ -72,7 +80,17 @@ fn main() {
 
     let mut asteroids: Vec<Asteroid> = Vec::new();
 
-    let controls = Controls::new(None, None, None, None, None, None, None);
+    let mut controls = Controls::new(
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        window_width,
+        window_height,
+    );
 
     let mut rng = rand::rng();
 
@@ -101,8 +119,9 @@ fn main() {
             &mut active_screen,
             &mut player,
             &mut projectiles,
-            &button_rect,
-            &controls,
+            &button_rect_start,
+            &button_rect_controls,
+            &mut controls,
             &mut audio_manager,
         );
 
@@ -126,10 +145,12 @@ fn main() {
             window_width,
             window_height,
             &player,
+            &mut controls,
             &asteroids,
             &projectiles,
             &textures,
-            &button_rect,
+            &button_rect_start,
+            &button_rect_controls,
         );
     }
 }
@@ -140,10 +161,12 @@ fn draw(
     window_width: i32,
     window_height: i32,
     player: &Player,
+    controls: &mut Controls,
     asteroids: &Vec<Asteroid>,
     projectiles: &Vec<Projectile>,
     texset: &Textures,
-    button_rect: &Rectangle,
+    button_rect_start: &Rectangle,
+    button_rect_controls: &Rectangle,
 ) {
     d.clear_background(Color::WHITE);
     match active_screen {
@@ -156,12 +179,21 @@ fn draw(
                 30,
                 Color::BLACK,
             );
-            d.draw_rectangle_rec(button_rect, Color::GREEN);
-            d.draw_rectangle_lines_ex(button_rect, 2, Color::BLACK);
+            d.draw_rectangle_rec(button_rect_start, Color::GREEN);
+            d.draw_rectangle_rec(button_rect_controls, Color::ORANGE);
+            d.draw_rectangle_lines_ex(button_rect_start, 2, Color::BLACK);
+            d.draw_rectangle_lines_ex(button_rect_controls, 2, Color::BLACK);
             d.draw_text(
                 "START GAME",
-                (button_rect.x + 35.0) as i32,
-                (button_rect.y + 15.0) as i32,
+                (button_rect_start.x + 35.0) as i32,
+                (button_rect_start.y + 15.0) as i32,
+                20,
+                Color::BLACK,
+            );
+            d.draw_text(
+                "CONTROLS",
+                (button_rect_controls.x + 35.0) as i32,
+                (button_rect_controls.y + 15.0) as i32,
                 20,
                 Color::BLACK,
             );
@@ -210,6 +242,9 @@ fn draw(
                 ast.draw(d, &texset.asteroid_texture);
             }
         }
+        GameScreen::ControlMenu => {
+            Controls::draw_menu(d, controls);
+        }
         GameScreen::Paused => {
             // TODO: implement...
         }
@@ -221,17 +256,24 @@ fn poll_events(
     active_screen: &mut GameScreen,
     player: &mut Player,
     projectiles: &mut Vec<Projectile>,
-    button_rect: &Rectangle,
-    controls: &Controls,
+    button_rect_start: &Rectangle,
+    button_rec_controls: &Rectangle,
+    controls: &mut Controls,
     audio_manager: &mut AudioManager,
 ) {
     match active_screen {
         GameScreen::MainMenu => {
             let mouse_pos = rl.get_mouse_position();
 
-            if button_rect.check_collision_point_rec(mouse_pos) {
+            if button_rect_start.check_collision_point_rec(mouse_pos) {
                 if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
                     *active_screen = GameScreen::Gameplay;
+                }
+            }
+
+            if button_rec_controls.check_collision_point_rec(mouse_pos) {
+                if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                    *active_screen = GameScreen::ControlMenu;
                 }
             }
         }
@@ -243,6 +285,13 @@ fn poll_events(
                     player.reset_proj_timer();
                 }
             }
+        }
+        GameScreen::ControlMenu => {
+            if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE) {
+                *active_screen = GameScreen::MainMenu;
+            }
+
+            Controls::poll_events(rl, controls);
         }
         GameScreen::Paused => {
             //future pause update logic, nothing so far
@@ -369,4 +418,3 @@ fn split_asteroid(ast: &Asteroid, rng: &mut impl Rng) -> Vec<Asteroid> {
         })
         .collect()
 }
-
