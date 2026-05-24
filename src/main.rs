@@ -118,7 +118,7 @@ fn main() {
                 rng.random_range(-100.0..100.0),
                 rng.random_range(-100.0..100.0),
             ),
-            0.9 * dimension,
+            0.5 * dimension,
             dimension,
             dimension,
             rng.random_range(0.0..360.0),

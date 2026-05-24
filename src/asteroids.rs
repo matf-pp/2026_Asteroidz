@@ -69,4 +69,3 @@ impl Asteroid {
         return distance < asteroid.hitbox_radius + player.box_size.x.max(player.box_size.y) / 2.0;
     }
 }
-
