@@ -95,9 +95,12 @@ impl Controls {
     }
 
     fn code_to_key(code: u32) -> KeyboardKey {
+        // just why?? why does it return u32 but want i32... 💀
+        // HACK: if anyone finds a better way, be my guest
         unsafe { std::mem::transmute(code as i32) }
     }
     pub fn poll_events(rl: &mut RaylibHandle, controls: &mut Controls) {
+        // choose which action to rebind
         match controls.currently_rebinding {
             Rebinding::Forward | Rebinding::Left | Rebinding::Right | Rebinding::Shoot => {
                 if let Some(pressed) = rl.get_key_pressed_number() {
@@ -163,101 +166,63 @@ impl Controls {
         }
     }
     pub fn draw_menu(d: &mut RaylibDrawHandle, controls: &mut Controls) {
-        d.draw_text(
-            "Move forward: ",
-            ((controls.window_width as f32 / 2.0) - 200.0) as i32,
-            (controls.window_height as f32 / 2.0 - 180.0) as i32,
-            25,
-            Color::BLACK,
-        );
-        d.draw_text(
-            "Turn left: ",
-            ((controls.window_width as f32 / 2.0) - 200.0) as i32,
-            (controls.window_height as f32 / 2.0 - 100.0) as i32,
-            25,
-            Color::BLACK,
-        );
-        d.draw_text(
-            "Turn right: ",
-            ((controls.window_width as f32 / 2.0) - 200.0) as i32,
-            (controls.window_height as f32 / 2.0 - 20.0) as i32,
-            25,
-            Color::BLACK,
-        );
-        d.draw_text(
-            "Shoot: ",
-            ((controls.window_width as f32 / 2.0) - 200.0) as i32,
-            (controls.window_height as f32 / 2.0 + 60.0) as i32,
-            25,
-            Color::BLACK,
-        );
+        let center_x = controls.window_width as f32 / 2.0;
+        let center_y = controls.window_height as f32 / 2.0;
 
-        d.draw_rectangle_lines_ex(
-            controls.button_rect_front,
-            2,
-            if controls.currently_rebinding == Rebinding::Forward {
-                Color::ORANGE
-            } else {
-                Color::PURPLE
-            },
-        );
-        d.draw_rectangle_lines_ex(
-            controls.button_rect_left,
-            2,
-            if controls.currently_rebinding == Rebinding::Left {
-                Color::ORANGE
-            } else {
-                Color::PURPLE
-            },
-        );
-        d.draw_rectangle_lines_ex(
-            controls.button_rect_right,
-            2,
-            if controls.currently_rebinding == Rebinding::Right {
-                Color::ORANGE
-            } else {
-                Color::PURPLE
-            },
-        );
-        d.draw_rectangle_lines_ex(
-            controls.button_rect_shoot,
-            2,
-            if controls.currently_rebinding == Rebinding::Shoot {
-                Color::ORANGE
-            } else {
-                Color::PURPLE
-            },
-        );
+        let entries = [
+            (
+                "Move forward:",
+                controls.button_rect_front,
+                controls.forward,
+                Rebinding::Forward,
+                -180.0,
+            ),
+            (
+                "Turn left:",
+                controls.button_rect_left,
+                controls.left,
+                Rebinding::Left,
+                -100.0,
+            ),
+            (
+                "Turn right:",
+                controls.button_rect_right,
+                controls.right,
+                Rebinding::Right,
+                -20.0,
+            ),
+            (
+                "Shoot:",
+                controls.button_rect_shoot,
+                controls.shoot,
+                Rebinding::Shoot,
+                60.0,
+            ),
+        ];
 
-        d.draw_text(
-            &Controls::key_to_string(controls.forward),
-            (controls.button_rect_front.x + 35.0) as i32,
-            (controls.button_rect_front.y + 15.0) as i32,
-            20,
-            Color::BLACK,
-        );
-        d.draw_text(
-            &Controls::key_to_string(controls.left),
-            (controls.button_rect_left.x + 35.0) as i32,
-            (controls.button_rect_left.y + 15.0) as i32,
-            20,
-            Color::BLACK,
-        );
-        d.draw_text(
-            &Controls::key_to_string(controls.right),
-            (controls.button_rect_right.x + 35.0) as i32,
-            (controls.button_rect_right.y + 15.0) as i32,
-            20,
-            Color::BLACK,
-        );
-        d.draw_text(
-            &Controls::key_to_string(controls.shoot),
-            (controls.button_rect_shoot.x + 35.0) as i32,
-            (controls.button_rect_shoot.y + 15.0) as i32,
-            20,
-            Color::BLACK,
-        );
+        for (label, rect, key, rebinding, y_offset) in entries {
+            let y = center_y + y_offset;
 
+            d.draw_text(label, (center_x - 200.0) as i32, y as i32, 25, Color::BLACK);
+
+            d.draw_rectangle_lines_ex(
+                rect,
+                2,
+                if controls.currently_rebinding == rebinding {
+                    Color::ORANGE
+                } else {
+                    Color::PURPLE
+                },
+            );
+
+            d.draw_text(
+                &Controls::key_to_string(key),
+                (rect.x + 35.0) as i32,
+                (rect.y + 15.0) as i32,
+                20,
+                Color::BLACK,
+            );
+        }
         d.draw_text(
             "Press Backspace to return to main menu...",
             ((controls.window_width as f32 / 2.0) - 200.0) as i32,
