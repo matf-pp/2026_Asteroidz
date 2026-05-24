@@ -33,7 +33,7 @@ fn main() {
         .title("ASTEROIDZ")
         .vsync()
         .build();
-
+    
     let mut active_screen = GameScreen::MainMenu;
 
     let mut player = Player::new(
@@ -59,6 +59,12 @@ fn main() {
         180.0,
         50.0,
     );
+
+    let mut blur_shader = rl.load_shader(&thread, None, Some("assets/blur.fs")).unwrap();
+    let res_loc = blur_shader.get_shader_location("renderResolution");
+    blur_shader.set_shader_value(res_loc, Vector2::new(window_width as f32, window_height as f32));
+    let mut target = rl.load_render_texture(&thread, window_width as u32, window_height as u32).unwrap();
+
 
     let texture_static = rl.load_texture(&thread, "assets/spaceship.png").unwrap();
     let texture_1thruster: Texture2D = rl.load_texture(&thread, "assets/1thruster.png").unwrap();
@@ -137,9 +143,7 @@ fn main() {
             &controls,
             &mut audio_manager,
         );
-
         let mut d = rl.begin_drawing(&thread);
-
         draw(
             &mut d,
             &active_screen,
@@ -152,6 +156,9 @@ fn main() {
             &textures,
             &button_rect_start,
             &button_rect_controls,
+            &mut target,
+            &blur_shader,
+            &thread,
         );
     }
 }
@@ -168,6 +175,9 @@ fn draw(
     texset: &Textures,
     button_rect_start: &Rectangle,
     button_rect_controls: &Rectangle,
+    target: &mut RenderTexture2D,
+    blur_shader: &Shader,
+    thread: &RaylibThread,
 ) {
     d.clear_background(Color::WHITE);
     match active_screen {
@@ -199,56 +209,71 @@ fn draw(
                 Color::BLACK,
             );
         }
-        GameScreen::Gameplay | GameScreen::Paused => {
-            let texture_current = match player.thruster_state {
-                ThrusterState::Off => &texset.texture_static,
-                ThrusterState::Single => &texset.texture_1thruster,
-                ThrusterState::Triple => &texset.texture_3thruster,
-            };
+        GameScreen::Gameplay  => {
+            {
+                let mut texture_mode = d.begin_texture_mode(thread, target);
+                texture_mode.clear_background(Color::WHITE);
 
-            for proj in projectiles {
-                proj.draw(d, &texset.projectile_texture);
-            }
+                for proj in projectiles {
+                    proj.draw(&mut texture_mode, &texset.projectile_texture);
+                }
 
-            d.draw_texture_pro(
-                &texture_current,
-                Rectangle::new(
-                    0.0,
-                    0.0,
-                    texture_current.width as f32,
-                    texture_current.height as f32,
-                ),
-                Rectangle::new(
-                    player.position.x,
-                    player.position.y,
-                    player.box_size.x,
-                    player.box_size.y,
-                ),
+                let texture_current = match player.thruster_state {
+                    ThrusterState::Off => &texset.texture_static,
+                    ThrusterState::Single => &texset.texture_1thruster,
+                    ThrusterState::Triple => &texset.texture_3thruster,
+                };
+
+                texture_mode.draw_texture_pro(
+                    &texture_current,
+                Rectangle::new(0.0, 0.0, texture_current.width as f32, texture_current.height as f32),
+                Rectangle::new(player.position.x, player.position.y, player.box_size.x, player.box_size.y),
                 Vector2::new(player.box_size.x / 2.0, player.box_size.y / 2.0),
                 player.angle.to_degrees(),
                 Color::WHITE,
-            );
-
-            for i in 0..player.health {
-                // draw healthbar
-                d.draw_texture(
-                    &texset.heart_texture,
-                    10 + (i as i32 * 25),
-                    10,
-                    Color::WHITE,
                 );
+
+                for ast in asteroids {
+                    ast.draw(&mut texture_mode, &texset.asteroid_texture);
+                }
+
+                for i in 0..player.health {
+                texture_mode.draw_texture(&texset.heart_texture, 10 + (i as i32 * 25), 10, Color::WHITE);
+            }
             }
 
-            for ast in asteroids {
-                ast.draw(d, &texset.asteroid_texture);
-            }
+            d.draw_texture_rec(
+                target.texture(),
+            Rectangle::new(0.0, 0.0, target.texture().width as f32, -target.texture().height as f32),
+            Vector2::new(0.0, 0.0),
+            Color::WHITE,
+            );  
         }
         GameScreen::ControlMenu => {
             Controls::draw_menu(d, controls);
         }
-        /*GameScreen::Paused => {
-            // TODO: implement...
-        }*/
+        GameScreen::Paused => {
+            {
+                let mut shader_mode = d.begin_shader_mode(blur_shader);
+                shader_mode.draw_texture_rec(
+                    target.texture(),
+                    Rectangle::new(0.0, 0.0, target.texture().width as f32, -target.texture().height as f32),
+                    Vector2::new(0.0, 0.0),
+                    Color::WHITE,
+                );
+            } 
+            
+            let text = "GAME PAUSED";
+            let font_size = 40;
+            let text_width = raylib::text::measure_text(text, font_size);
+            d.draw_text(
+                text,
+                (window_width / 2) - (text_width / 2),
+                (window_height / 2) - 20,
+                font_size,
+                Color::BLACK,
+            );
+        }
     }
 }
 

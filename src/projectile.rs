@@ -26,7 +26,7 @@ impl Projectile {
         self.position += self.velocity * dt;
     }
 
-    pub fn draw(&self, d: &mut RaylibDrawHandle, texture: &Texture2D) {
+    pub fn draw(&self, d: &mut impl RaylibDraw, texture: &Texture2D) {
         d.draw_texture_pro(
             texture,
             Rectangle::new(0.0, 0.0, texture.width as f32, texture.height as f32),
