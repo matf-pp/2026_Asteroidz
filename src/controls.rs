@@ -9,6 +9,7 @@ pub struct Controls {
     pub mute: KeyboardKey,
     pub volume_up: KeyboardKey,
     pub volume_down: KeyboardKey,
+    pub pause: KeyboardKey,
 
     currently_rebinding: Rebinding,
     display_rebind_err: bool,
@@ -40,6 +41,7 @@ impl Controls {
         mute: Option<KeyboardKey>,
         volume_up: Option<KeyboardKey>,
         volume_down: Option<KeyboardKey>,
+        pause: Option<KeyboardKey>,
         window_width: i32,
         window_height: i32,
     ) -> Self {
@@ -51,6 +53,7 @@ impl Controls {
             mute: mute.unwrap_or(KEY_M),
             volume_up: volume_up.unwrap_or(KEY_F3),
             volume_down: volume_down.unwrap_or(KEY_F2),
+            pause: pause.unwrap_or(KEY_P),
             currently_rebinding: Rebinding::None,
             display_rebind_err: false,
 

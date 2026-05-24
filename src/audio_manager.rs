@@ -1,6 +1,7 @@
 use raylib::prelude::*;
 use crate::controls::Controls;
 use crate::ThrusterState;
+use crate::GameScreen;
 pub struct AudioManager{
     audio_device: RaylibAudio,
     background_music: Music,
@@ -48,7 +49,7 @@ impl AudioManager{
         }
     }
 
-    pub fn update(&mut self, rl: &RaylibHandle, controls: &Controls, thruster_state: &ThrusterState){
+    pub fn update(&mut self, rl: &RaylibHandle, controls: &Controls, thruster_state: &ThrusterState, active_screen: &GameScreen){
         self.audio_device.update_music_stream(&mut self.background_music);
         if rl.is_key_pressed(controls.mute) {
             self.audio_device.set_master_volume(if !self.muted { 0.0 } else { self.volume });
@@ -66,16 +67,25 @@ impl AudioManager{
                 self.audio_device.set_master_volume(self.volume);
             }
         }
-        if *thruster_state != ThrusterState::Off {
-            self.audio_device.update_music_stream(&mut self.sfx_thruster);
-            if !self.is_thruster_sfx_playing {
-                self.audio_device.play_music_stream(&mut self.sfx_thruster);
-                self.is_thruster_sfx_playing = true;
-            }
-        } else {
-            if self.is_thruster_sfx_playing {
+        if *active_screen == GameScreen::Paused
+        {
+            if self.is_thruster_sfx_playing{
                 self.audio_device.stop_music_stream(&mut self.sfx_thruster);
-                self.is_thruster_sfx_playing = false;
+                self.is_thruster_sfx_playing=false;
+            }
+        }
+        else{
+            if *thruster_state != ThrusterState::Off {
+                self.audio_device.update_music_stream(&mut self.sfx_thruster);
+                if !self.is_thruster_sfx_playing {
+                    self.audio_device.play_music_stream(&mut self.sfx_thruster);
+                    self.is_thruster_sfx_playing = true;
+                }
+            } else {
+                if self.is_thruster_sfx_playing {
+                    self.audio_device.stop_music_stream(&mut self.sfx_thruster);
+                    self.is_thruster_sfx_playing = false;
+                }
             }
         }
     }

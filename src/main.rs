@@ -11,7 +11,7 @@ enum GameScreen {
     Gameplay,
 
     ControlMenu,
-    Paused, //not needed for now, but probably will implement later
+    Paused,
 }
 
 use std::collections::HashSet;
@@ -81,6 +81,7 @@ fn main() {
     let mut asteroids: Vec<Asteroid> = Vec::new();
 
     let mut controls = Controls::new(
+        None,
         None,
         None,
         None,
@@ -198,7 +199,7 @@ fn draw(
                 Color::BLACK,
             );
         }
-        GameScreen::Gameplay => {
+        GameScreen::Gameplay | GameScreen::Paused => {
             let texture_current = match player.thruster_state {
                 ThrusterState::Off => &texset.texture_static,
                 ThrusterState::Single => &texset.texture_1thruster,
@@ -245,9 +246,9 @@ fn draw(
         GameScreen::ControlMenu => {
             Controls::draw_menu(d, controls);
         }
-        GameScreen::Paused => {
+        /*GameScreen::Paused => {
             // TODO: implement...
-        }
+        }*/
     }
 }
 
@@ -278,6 +279,9 @@ fn poll_events(
             }
         }
         GameScreen::Gameplay => {
+            if rl.is_key_pressed(controls.pause){
+                *active_screen=GameScreen::Paused;
+            }
             if rl.is_key_pressed(controls.shoot) {
                 if player.proj_delay <= 0.0 {
                     projectiles.push(Projectile::new(player.position, player.angle));
@@ -294,7 +298,9 @@ fn poll_events(
             Controls::poll_events(rl, controls);
         }
         GameScreen::Paused => {
-            //future pause update logic, nothing so far
+            if rl.is_key_pressed(controls.pause){
+                *active_screen = GameScreen::Gameplay;
+            }
         }
     }
 }
@@ -310,7 +316,8 @@ fn update(
     controls: &Controls,
     audio_manager: &mut AudioManager,
 ) {
-    audio_manager.update(&rl, &controls, &player.thruster_state);
+    audio_manager.update(&rl, &controls, &player.thruster_state, &active_screen);
+    
     match active_screen {
         GameScreen::Gameplay => {
             player.update(&rl, window_width, window_height, &controls);
