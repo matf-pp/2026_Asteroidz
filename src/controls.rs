@@ -1,6 +1,8 @@
 use raylib::consts::KeyboardKey::*;
 use raylib::prelude::*;
 
+use crate::GameScreen;
+
 pub struct Controls {
     pub left: KeyboardKey,
     pub right: KeyboardKey,
@@ -13,6 +15,7 @@ pub struct Controls {
 
     currently_rebinding: Rebinding,
     display_rebind_err: bool,
+    pub from_menu: GameScreen,
 
     button_rect_front: Rectangle,
     button_rect_left: Rectangle,
@@ -56,6 +59,7 @@ impl Controls {
             pause: pause.unwrap_or(KEY_P),
             currently_rebinding: Rebinding::None,
             display_rebind_err: false,
+            from_menu: GameScreen::MainMenu,
 
             button_rect_front: Rectangle::new(
                 ((window_width as f32 / 2.0) + 150.0) as f32,

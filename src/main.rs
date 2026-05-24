@@ -5,7 +5,7 @@ mod player;
 mod projectile;
 mod textures;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 enum GameScreen {
     MainMenu,
     Gameplay,
@@ -33,7 +33,7 @@ fn main() {
         .title("ASTEROIDZ")
         .vsync()
         .build();
-    
+
     let mut active_screen = GameScreen::MainMenu;
 
     let mut player = Player::new(
@@ -60,11 +60,17 @@ fn main() {
         50.0,
     );
 
-    let mut blur_shader = rl.load_shader(&thread, None, Some("assets/blur.fs")).unwrap();
+    let mut blur_shader = rl
+        .load_shader(&thread, None, Some("assets/blur.fs"))
+        .unwrap();
     let res_loc = blur_shader.get_shader_location("renderResolution");
-    blur_shader.set_shader_value(res_loc, Vector2::new(window_width as f32, window_height as f32));
-    let mut target = rl.load_render_texture(&thread, window_width as u32, window_height as u32).unwrap();
-
+    blur_shader.set_shader_value(
+        res_loc,
+        Vector2::new(window_width as f32, window_height as f32),
+    );
+    let mut target = rl
+        .load_render_texture(&thread, window_width as u32, window_height as u32)
+        .unwrap();
 
     let texture_static = rl.load_texture(&thread, "assets/spaceship.png").unwrap();
     let texture_1thruster: Texture2D = rl.load_texture(&thread, "assets/1thruster.png").unwrap();
@@ -209,7 +215,7 @@ fn draw(
                 Color::BLACK,
             );
         }
-        GameScreen::Gameplay  => {
+        GameScreen::Gameplay => {
             {
                 let mut texture_mode = d.begin_texture_mode(thread, target);
                 texture_mode.clear_background(Color::WHITE);
@@ -226,11 +232,21 @@ fn draw(
 
                 texture_mode.draw_texture_pro(
                     &texture_current,
-                Rectangle::new(0.0, 0.0, texture_current.width as f32, texture_current.height as f32),
-                Rectangle::new(player.position.x, player.position.y, player.box_size.x, player.box_size.y),
-                Vector2::new(player.box_size.x / 2.0, player.box_size.y / 2.0),
-                player.angle.to_degrees(),
-                Color::WHITE,
+                    Rectangle::new(
+                        0.0,
+                        0.0,
+                        texture_current.width as f32,
+                        texture_current.height as f32,
+                    ),
+                    Rectangle::new(
+                        player.position.x,
+                        player.position.y,
+                        player.box_size.x,
+                        player.box_size.y,
+                    ),
+                    Vector2::new(player.box_size.x / 2.0, player.box_size.y / 2.0),
+                    player.angle.to_degrees(),
+                    Color::WHITE,
                 );
 
                 for ast in asteroids {
@@ -238,16 +254,26 @@ fn draw(
                 }
 
                 for i in 0..player.health {
-                texture_mode.draw_texture(&texset.heart_texture, 10 + (i as i32 * 25), 10, Color::WHITE);
-            }
+                    texture_mode.draw_texture(
+                        &texset.heart_texture,
+                        10 + (i as i32 * 25),
+                        10,
+                        Color::WHITE,
+                    );
+                }
             }
 
             d.draw_texture_rec(
                 target.texture(),
-            Rectangle::new(0.0, 0.0, target.texture().width as f32, -target.texture().height as f32),
-            Vector2::new(0.0, 0.0),
-            Color::WHITE,
-            );  
+                Rectangle::new(
+                    0.0,
+                    0.0,
+                    target.texture().width as f32,
+                    -target.texture().height as f32,
+                ),
+                Vector2::new(0.0, 0.0),
+                Color::WHITE,
+            );
         }
         GameScreen::ControlMenu => {
             Controls::draw_menu(d, controls);
@@ -257,12 +283,17 @@ fn draw(
                 let mut shader_mode = d.begin_shader_mode(blur_shader);
                 shader_mode.draw_texture_rec(
                     target.texture(),
-                    Rectangle::new(0.0, 0.0, target.texture().width as f32, -target.texture().height as f32),
+                    Rectangle::new(
+                        0.0,
+                        0.0,
+                        target.texture().width as f32,
+                        -target.texture().height as f32,
+                    ),
                     Vector2::new(0.0, 0.0),
                     Color::WHITE,
                 );
-            } 
-            
+            }
+
             let text = "GAME PAUSED";
             let font_size = 40;
             let text_width = raylib::text::measure_text(text, font_size);
@@ -271,6 +302,16 @@ fn draw(
                 (window_width / 2) - (text_width / 2),
                 (window_height / 2) - 20,
                 font_size,
+                Color::BLACK,
+            );
+
+            d.draw_rectangle_rec(button_rect_controls, Color::ORANGE);
+            d.draw_rectangle_lines_ex(button_rect_controls, 2, Color::BLACK);
+            d.draw_text(
+                "CONTROLS",
+                (button_rect_controls.x + 35.0) as i32,
+                (button_rect_controls.y + 15.0) as i32,
+                20,
                 Color::BLACK,
             );
         }
@@ -299,13 +340,14 @@ fn poll_events(
 
             if button_rec_controls.check_collision_point_rec(mouse_pos) {
                 if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                    controls.from_menu = GameScreen::MainMenu;
                     *active_screen = GameScreen::ControlMenu;
                 }
             }
         }
         GameScreen::Gameplay => {
-            if rl.is_key_pressed(controls.pause){
-                *active_screen=GameScreen::Paused;
+            if rl.is_key_pressed(controls.pause) {
+                *active_screen = GameScreen::Paused;
             }
             if rl.is_key_pressed(controls.shoot) {
                 if player.proj_delay <= 0.0 {
@@ -317,14 +359,22 @@ fn poll_events(
         }
         GameScreen::ControlMenu => {
             if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE) {
-                *active_screen = GameScreen::MainMenu;
+                *active_screen = controls.from_menu;
             }
 
             Controls::poll_events(rl, controls);
         }
         GameScreen::Paused => {
-            if rl.is_key_pressed(controls.pause){
+            if rl.is_key_pressed(controls.pause) {
                 *active_screen = GameScreen::Gameplay;
+            }
+
+            let mouse_pos = rl.get_mouse_position();
+            if button_rec_controls.check_collision_point_rec(mouse_pos) {
+                if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                    controls.from_menu = GameScreen::Paused;
+                    *active_screen = GameScreen::ControlMenu;
+                }
             }
         }
     }
@@ -342,7 +392,7 @@ fn update(
     audio_manager: &mut AudioManager,
 ) {
     audio_manager.update(&rl, &controls, &player.thruster_state, &active_screen);
-    
+
     match active_screen {
         GameScreen::Gameplay => {
             player.update(&rl, window_width, window_height, &controls);
