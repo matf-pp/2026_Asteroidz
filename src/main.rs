@@ -230,24 +230,26 @@ fn draw(
                     ThrusterState::Triple => &texset.texture_3thruster,
                 };
 
-                texture_mode.draw_texture_pro(
-                    &texture_current,
-                    Rectangle::new(
-                        0.0,
-                        0.0,
-                        texture_current.width as f32,
-                        texture_current.height as f32,
-                    ),
-                    Rectangle::new(
-                        player.position.x,
-                        player.position.y,
-                        player.box_size.x,
-                        player.box_size.y,
-                    ),
-                    Vector2::new(player.box_size.x / 2.0, player.box_size.y / 2.0),
-                    player.angle.to_degrees(),
-                    Color::WHITE,
-                );
+                if player.visible {
+                    texture_mode.draw_texture_pro(
+                        &texture_current,
+                        Rectangle::new(
+                            0.0,
+                            0.0,
+                            texture_current.width as f32,
+                            texture_current.height as f32,
+                        ),
+                        Rectangle::new(
+                            player.position.x,
+                            player.position.y,
+                            player.box_size.x,
+                            player.box_size.y,
+                        ),
+                        Vector2::new(player.box_size.x / 2.0, player.box_size.y / 2.0),
+                        player.angle.to_degrees(),
+                        Color::WHITE,
+                    );
+                }
 
                 for ast in asteroids {
                     ast.draw(&mut texture_mode, &texset.asteroid_texture);

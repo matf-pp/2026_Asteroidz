@@ -18,6 +18,7 @@ pub struct Player {
     pub thruster_timer: f32,
     pub health: u8,
     pub invincible_timer: f32,
+    pub visible: bool,
     pub proj_delay: f32,
 }
 
@@ -42,6 +43,7 @@ impl Player {
             thruster_timer: 0.0,
             health: 3,
             invincible_timer: 0.0,
+            visible: true,
             proj_delay: 0.0,
         }
     }
@@ -81,6 +83,9 @@ impl Player {
 
         if self.invincible_timer > 0.0 {
             self.invincible_timer -= dt;
+            self.visible =
+                (self.invincible_timer <= 0.0) || ((self.invincible_timer * 5.0) as i32) % 2 == 0;
+            // when timer runs out, ship MUST be visible, otherwise blinking...
         }
 
         if self.proj_delay > 0.0 {
