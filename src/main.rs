@@ -185,7 +185,7 @@ fn draw(
     blur_shader: &Shader,
     thread: &RaylibThread,
 ) {
-    d.clear_background(Color::WHITE);
+    d.clear_background(Color::DARKBLUE);
     match active_screen {
         GameScreen::MainMenu => {
             //TODO: replace hardcoded values to allow for rescaling
@@ -218,7 +218,7 @@ fn draw(
         GameScreen::Gameplay => {
             {
                 let mut texture_mode = d.begin_texture_mode(thread, target);
-                texture_mode.clear_background(Color::WHITE);
+                texture_mode.clear_background(Color::DARKBLUE);
 
                 for proj in projectiles {
                     proj.draw(&mut texture_mode, &texset.projectile_texture);
