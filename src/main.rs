@@ -24,6 +24,11 @@ use projectile::Projectile;
 use rand::{Rng, RngExt};
 use raylib::prelude::*;
 use textures::Textures;
+
+struct GameState {
+    score: u32,
+}
+
 fn main() {
     let window_width = 640;
     let window_height = 480;
@@ -43,6 +48,8 @@ fn main() {
         0.0,
         ThrusterState::Off,
     );
+
+    let mut current_game_state = GameState { score: 0 };
 
     let mut audio_manager = AudioManager::new(&thread);
 
@@ -148,6 +155,7 @@ fn main() {
             &mut projectiles,
             &controls,
             &mut audio_manager,
+            &mut current_game_state
         );
         let mut d = rl.begin_drawing(&thread);
         draw(
@@ -165,6 +173,7 @@ fn main() {
             &mut target,
             &blur_shader,
             &thread,
+            &mut current_game_state,
         );
     }
 }
@@ -184,6 +193,7 @@ fn draw(
     target: &mut RenderTexture2D,
     blur_shader: &Shader,
     thread: &RaylibThread,
+    current_game_state: &mut GameState,
 ) {
     d.clear_background(Color::DARKBLUE);
     match active_screen {
@@ -276,6 +286,9 @@ fn draw(
                 Vector2::new(0.0, 0.0),
                 Color::WHITE,
             );
+
+            let score_text = format!("SCORE: {}", current_game_state.score);
+            d.draw_text(&score_text, window_height - 10, 10, 20, Color::WHITE);
         }
         GameScreen::ControlMenu => {
             Controls::draw_menu(d, controls);
@@ -392,6 +405,7 @@ fn update(
     projectiles: &mut Vec<Projectile>,
     controls: &Controls,
     audio_manager: &mut AudioManager,
+    current_game_state: &mut GameState
 ) {
     audio_manager.update(&rl, &controls, &player.thruster_state, &active_screen);
 
@@ -414,7 +428,7 @@ fn update(
             // });
 
             //println!("theres {} asteroids...", asteroids.len());
-            destroy_asteroids(asteroids, projectiles);
+            destroy_asteroids(asteroids, projectiles, current_game_state);
 
             let dt = rl.get_frame_time();
             for proj in projectiles {
@@ -432,7 +446,7 @@ fn update(
     }
 }
 
-fn destroy_asteroids(asteroids: &mut Vec<Asteroid>, projectiles: &mut Vec<Projectile>) {
+fn destroy_asteroids(asteroids: &mut Vec<Asteroid>, projectiles: &mut Vec<Projectile>, current_game_state: &mut GameState) {
     let mut proj_to_remove: HashSet<usize> = HashSet::new();
     let mut ast_to_remove: HashSet<usize> = HashSet::new();
 
@@ -441,6 +455,7 @@ fn destroy_asteroids(asteroids: &mut Vec<Asteroid>, projectiles: &mut Vec<Projec
     for (pi, proj) in projectiles.iter().enumerate() {
         for (ai, ast) in asteroids.iter().enumerate() {
             if Projectile::check_collision_with_asteroid(proj, ast) {
+                current_game_state.score += 10;
                 proj_to_remove.insert(pi);
                 ast_to_remove.insert(ai);
             }
