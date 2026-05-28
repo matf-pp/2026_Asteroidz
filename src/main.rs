@@ -37,7 +37,7 @@ fn main() {
     let mut active_screen = GameScreen::MainMenu;
 
     let mut player = Player::new(
-        Vector2::new(100.0, 100.0),
+        Vector2::new((window_width as f32 - 32.0) / 2.0, (window_height as f32 - 32.0) / 2.0),
         Vector2::new(0.0, 0.0),
         Vector2::new(32.0, 32.0),
         0.0,
