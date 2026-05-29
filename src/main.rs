@@ -12,6 +12,8 @@ enum GameScreen {
 
     ControlMenu,
     Paused,
+
+    GameOver,
 }
 
 use std::collections::HashSet;
@@ -74,6 +76,12 @@ fn main() {
         (window_width as f32 / 2.0) - 90.0,
         (window_height as f32 / 2.0) + 80.0,
         180.0,
+        50.0,
+    );
+    let button_rect_back = Rectangle::new(
+        (window_width as f32 / 2.0) - 110.0,
+        (window_height as f32 / 2.0) + 80.0,
+        220.0,
         50.0,
     );
 
@@ -151,13 +159,14 @@ fn main() {
             &mut projectiles,
             &button_rect_start,
             &button_rect_controls,
+            &button_rect_back,
             &mut controls,
             &mut audio_manager,
         );
 
         update(
             &mut rl,
-            &active_screen,
+            &mut active_screen,
             window_width,
             window_height,
             &mut player,
@@ -180,6 +189,7 @@ fn main() {
             &textures,
             &button_rect_start,
             &button_rect_controls,
+            &button_rect_back,
             &mut target,
             &blur_shader,
             &thread,
@@ -200,6 +210,7 @@ fn draw(
     texset: &Textures,
     button_rect_start: &Rectangle,
     button_rect_controls: &Rectangle,
+    button_rect_back: &Rectangle,
     target: &mut RenderTexture2D,
     blur_shader: &Shader,
     thread: &RaylibThread,
@@ -343,6 +354,37 @@ fn draw(
                 Color::BLACK,
             );
         }
+        GameScreen::GameOver => {
+            d.clear_background(Color::DARKBLUE);
+            let text_go: &str = "GAME OVER";
+            let mut font_size = 40;
+            let mut text_width = raylib::text::measure_text(text_go, font_size);
+            d.draw_text(
+                text_go,
+                ((window_width as f32 / 2.0) - (text_width as f32 / 2.0)) as i32,
+                ((window_height as f32 / 2.0) - 100.0) as i32,
+                font_size,
+                Color::WHITE,
+            );
+            let text_score: String = format!("Score: {:?}", current_game_state.score);
+            font_size = 30;
+            text_width = raylib::text::measure_text(&text_score, font_size);
+            d.draw_text(
+                &text_score,
+                ((window_width as f32 / 2.0) - (text_width as f32 / 2.0)) as i32,
+                ((window_height as f32 / 2.0) - 10.0) as i32,
+                font_size,
+                Color::WHITE,
+            );
+            d.draw_rectangle_rounded_lines(button_rect_back, 0.4, 1, 1, Color::WHITE);
+            d.draw_text(
+                "Back to main menu",
+                button_rect_controls.x as i32,
+                (button_rect_controls.y + 15.0) as i32,
+                20,
+                Color::WHITE,
+            );
+        }
     }
 }
 
@@ -353,6 +395,7 @@ fn poll_events(
     projectiles: &mut Vec<Projectile>,
     button_rect_start: &Rectangle,
     button_rec_controls: &Rectangle,
+    button_rect_back: &Rectangle,
     controls: &mut Controls,
     audio_manager: &mut AudioManager,
 ) {
@@ -407,12 +450,20 @@ fn poll_events(
                 }
             }
         }
+        GameScreen::GameOver => {
+            let mouse_pos = rl.get_mouse_position();
+            if button_rect_back.check_collision_point_rec(mouse_pos) {
+                if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                    *active_screen = GameScreen::MainMenu;
+                }
+            }
+        }
     }
 }
 
 fn update(
     rl: &mut RaylibHandle,
-    active_screen: &GameScreen,
+    active_screen: &mut GameScreen,
     window_width: i32,
     window_height: i32,
     player: &mut Player,
@@ -427,6 +478,10 @@ fn update(
     match active_screen {
         GameScreen::Gameplay => {
             player.update(&rl, window_width, window_height, &controls);
+
+            if !player.is_alive() {
+                *active_screen = GameScreen::GameOver;
+            }
 
             // projectiles.retain(|proj| {
             //     proj.position.x >= -10.0
