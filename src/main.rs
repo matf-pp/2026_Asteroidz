@@ -24,9 +24,12 @@ use projectile::Projectile;
 use rand::{Rng, RngExt};
 use raylib::prelude::*;
 use textures::Textures;
+use std::f32::consts::{PI, FRAC_PI_2};
 
 struct GameState {
     score: u32,
+    last_asteroid_spawn_time: f64,
+    asteroid_spawn_amount: u32,
 }
 
 fn main() {
@@ -49,7 +52,7 @@ fn main() {
         ThrusterState::Off,
     );
 
-    let mut current_game_state = GameState { score: 0 };
+    let mut current_game_state = GameState { score: 0, last_asteroid_spawn_time: rl.get_time(), asteroid_spawn_amount: 1 };
 
     let mut audio_manager = AudioManager::new(&thread);
 
@@ -115,7 +118,7 @@ fn main() {
     let mut rng = rand::rng();
 
     for _ in 0..=2 {
-        let dimension: f32 = 2.0_f32.powf(rng.random_range(6.0..=6.0));
+        let dimension: f32 = 2.0_f32.powf(6.0f32);
         asteroids.push(Asteroid::new(
             Vector2::new(
                 rng.random_range(0.0..window_width as f32),
@@ -431,16 +434,20 @@ fn update(
             destroy_asteroids(asteroids, projectiles, current_game_state);
 
             let dt = rl.get_frame_time();
+            let time: f64 = rl.get_time();
+
             for proj in projectiles {
                 proj.update(dt);
             }
 
-            for x in asteroids {
+            for x in asteroids.iter_mut() {
                 x.update(dt, window_width, window_height);
                 if player.is_alive() && Asteroid::check_collision_with_player(&player, x) {
                     player.take_damage();
                 }
             }
+
+            spawn_new_asteroids(asteroids, window_width, window_height, current_game_state, time);
         }
         _ => {}
     }
@@ -516,4 +523,44 @@ fn split_asteroid(ast: &Asteroid, rng: &mut impl Rng) -> Vec<Asteroid> {
             )
         })
         .collect()
+}
+
+fn spawn_new_asteroids(asteroids: &mut Vec<Asteroid>, window_width: i32, window_height: i32, current_game_state: &mut GameState, now: f64) {
+    if now - current_game_state.last_asteroid_spawn_time >= 10.0 {
+        let mut rng = rand::rng();
+        let dimension: f32 = 2.0_f32.powf(6.0f32);
+
+        for _ in 0..current_game_state.asteroid_spawn_amount {
+            let possible_locations = vec![
+                Vector2::new(-dimension, rng.random_range(0.0..window_height as f32)), 
+                Vector2::new(window_width as f32, rng.random_range(0.0..window_height as f32)), 
+                Vector2::new(rng.random_range(0.0..window_width as f32), -dimension), 
+                Vector2::new(rng.random_range(0.0..window_width as f32), window_height as f32)
+            ];
+
+            let speed = rng.random_range(50.0..150.0);
+            let possible_velocities = vec![
+                { let a = rng.random_range(-FRAC_PI_2..FRAC_PI_2);       Vector2::new(a.cos() * speed, a.sin() * speed) },
+                { let a = rng.random_range(FRAC_PI_2..3.0*FRAC_PI_2);    Vector2::new(a.cos() * speed, a.sin() * speed) },
+                { let a = rng.random_range(0.0..PI);                      Vector2::new(a.cos() * speed, a.sin() * speed) },
+                { let a = rng.random_range(-PI..0.0);                     Vector2::new(a.cos() * speed, a.sin() * speed) },
+            ];
+
+            let index = rng.random_range(0..possible_locations.len());
+
+            asteroids.push(Asteroid::new(
+                possible_locations[index],
+                possible_velocities[index],
+                0.5 * dimension,
+                dimension,
+                dimension,
+                rng.random_range(0.0..360.0),
+                rng.random_range(-2.0..2.0),
+            ));
+        }
+
+        current_game_state.last_asteroid_spawn_time = now;
+        let new_spawn_amount = ((current_game_state.asteroid_spawn_amount as f32 * 1.5).ceil() as u32).min(5);
+        current_game_state.asteroid_spawn_amount = new_spawn_amount;
+    }
 }
