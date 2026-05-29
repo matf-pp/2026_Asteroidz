@@ -202,12 +202,15 @@ fn draw(
     match active_screen {
         GameScreen::MainMenu => {
             //TODO: replace hardcoded values to allow for rescaling
+            let text= "ASTEROIDZ";
+            let font_size=40;
+            let text_width=raylib::text::measure_text(text, font_size);
             d.draw_text(
-                "BOTTOM TEXT",
-                ((window_width as f32 / 2.0) - 115.0) as i32,
+                "ASTEROIDZ",
+                ((window_width as f32 / 2.0) - (text_width as f32/2.0)) as i32,
                 ((window_height as f32 / 2.0) - 100.0) as i32,
-                30,
-                Color::BLACK,
+                font_size,
+                Color::WHITE,
             );
             d.draw_rectangle_rec(button_rect_start, Color::GREEN);
             d.draw_rectangle_rec(button_rect_controls, Color::ORANGE);
@@ -320,7 +323,7 @@ fn draw(
                 (window_width / 2) - (text_width / 2),
                 (window_height / 2) - 20,
                 font_size,
-                Color::BLACK,
+                Color::WHITE,
             );
 
             d.draw_rectangle_rec(button_rect_controls, Color::ORANGE);

@@ -203,17 +203,20 @@ impl Controls {
         for (label, rect, key, rebinding, y_offset) in entries {
             let y = center_y + y_offset;
 
-            d.draw_text(label, (center_x - 200.0) as i32, y as i32, 25, Color::BLACK);
+            d.draw_text(label, (center_x - 200.0) as i32, y as i32, 25, Color::WHITE);
 
-            d.draw_rectangle_lines_ex(
+            
+
+            d.draw_rectangle_rec(
                 rect,
-                2,
                 if controls.currently_rebinding == rebinding {
                     Color::ORANGE
                 } else {
-                    Color::PURPLE
+                    Color::GREEN
                 },
             );
+
+            d.draw_rectangle_lines_ex(rect, 2, Color::BLACK);
 
             d.draw_text(
                 &Controls::key_to_string(key),
@@ -228,7 +231,7 @@ impl Controls {
             ((controls.window_width as f32 / 2.0) - 200.0) as i32,
             ((controls.window_height as f32 / 2.0) + 120.0) as i32,
             20,
-            Color::BLACK,
+            Color::WHITE,
         );
 
         if controls.display_rebind_err {
