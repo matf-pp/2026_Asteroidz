@@ -16,6 +16,7 @@ enum GameScreen {
 
 use std::collections::HashSet;
 
+use crate::controls::Rebinding;
 use crate::player::ThrusterState;
 use crate::{audio_manager::AudioManager, controls::Controls};
 use asteroids::Asteroid;
@@ -379,7 +380,7 @@ fn poll_events(
             }
         }
         GameScreen::ControlMenu => {
-            if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE) {
+            if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE) && controls.currently_rebinding==Rebinding::None{
                 *active_screen = controls.from_menu;
             }
 

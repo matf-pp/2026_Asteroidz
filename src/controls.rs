@@ -13,7 +13,7 @@ pub struct Controls {
     pub volume_down: KeyboardKey,
     pub pause: KeyboardKey,
 
-    currently_rebinding: Rebinding,
+    pub currently_rebinding: Rebinding,
     display_rebind_err: bool,
     pub from_menu: GameScreen,
 
@@ -27,7 +27,7 @@ pub struct Controls {
 }
 
 #[derive(PartialEq)]
-enum Rebinding {
+pub enum Rebinding {
     None,
     Forward,
     Left,
