@@ -435,7 +435,7 @@ fn update(
             // });
 
             //println!("theres {} asteroids...", asteroids.len());
-            destroy_asteroids(asteroids, projectiles, current_game_state);
+            destroy_asteroids(asteroids, projectiles, current_game_state, audio_manager);
 
             let dt = rl.get_frame_time();
             let time: f64 = rl.get_time();
@@ -447,7 +447,8 @@ fn update(
             for x in asteroids.iter_mut() {
                 x.update(dt, window_width, window_height);
                 if player.is_alive() && Asteroid::check_collision_with_player(&player, x) {
-                    player.take_damage();
+                    if player.invincible_timer<=0.0 {audio_manager.play_impact();}
+                    player.take_damage();    
                 }
             }
 
@@ -457,7 +458,7 @@ fn update(
     }
 }
 
-fn destroy_asteroids(asteroids: &mut Vec<Asteroid>, projectiles: &mut Vec<Projectile>, current_game_state: &mut GameState) {
+fn destroy_asteroids(asteroids: &mut Vec<Asteroid>, projectiles: &mut Vec<Projectile>, current_game_state: &mut GameState, audio_manager: &mut AudioManager) {
     let mut proj_to_remove: HashSet<usize> = HashSet::new();
     let mut ast_to_remove: HashSet<usize> = HashSet::new();
 
@@ -467,6 +468,7 @@ fn destroy_asteroids(asteroids: &mut Vec<Asteroid>, projectiles: &mut Vec<Projec
         for (ai, ast) in asteroids.iter().enumerate() {
             if Projectile::check_collision_with_asteroid(proj, ast) {
                 current_game_state.score += 10;
+                audio_manager.play_break();
                 proj_to_remove.insert(pi);
                 ast_to_remove.insert(ai);
             }
