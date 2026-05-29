@@ -17,14 +17,14 @@ enum GameScreen {
 use std::collections::HashSet;
 
 use crate::player::ThrusterState;
-use crate::{audio_manager::AudioManager, controls::Controls};
+use crate::{audio_manager::AudioManager, controls::Controls, controls::Rebinding};
 use asteroids::Asteroid;
 use player::Player;
 use projectile::Projectile;
 use rand::{Rng, RngExt};
 use raylib::prelude::*;
+use std::f32::consts::{FRAC_PI_2, PI};
 use textures::Textures;
-use std::f32::consts::{PI, FRAC_PI_2};
 
 struct GameState {
     score: u32,
@@ -45,14 +45,21 @@ fn main() {
     let mut active_screen = GameScreen::MainMenu;
 
     let mut player = Player::new(
-        Vector2::new((window_width as f32 - 32.0) / 2.0, (window_height as f32 - 32.0) / 2.0),
+        Vector2::new(
+            (window_width as f32 - 32.0) / 2.0,
+            (window_height as f32 - 32.0) / 2.0,
+        ),
         Vector2::new(0.0, 0.0),
         Vector2::new(32.0, 32.0),
         0.0,
         ThrusterState::Off,
     );
 
-    let mut current_game_state = GameState { score: 0, last_asteroid_spawn_time: rl.get_time(), asteroid_spawn_amount: 1 };
+    let mut current_game_state = GameState {
+        score: 0,
+        last_asteroid_spawn_time: rl.get_time(),
+        asteroid_spawn_amount: 1,
+    };
 
     let mut audio_manager = AudioManager::new(&thread);
 
@@ -158,7 +165,7 @@ fn main() {
             &mut projectiles,
             &controls,
             &mut audio_manager,
-            &mut current_game_state
+            &mut current_game_state,
         );
         let mut d = rl.begin_drawing(&thread);
         draw(
@@ -376,7 +383,9 @@ fn poll_events(
             }
         }
         GameScreen::ControlMenu => {
-            if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE) {
+            if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE)
+                && controls.currently_rebinding == Rebinding::None
+            {
                 *active_screen = controls.from_menu;
             }
 
@@ -408,7 +417,7 @@ fn update(
     projectiles: &mut Vec<Projectile>,
     controls: &Controls,
     audio_manager: &mut AudioManager,
-    current_game_state: &mut GameState
+    current_game_state: &mut GameState,
 ) {
     audio_manager.update(&rl, &controls, &player.thruster_state, &active_screen);
 
@@ -447,13 +456,23 @@ fn update(
                 }
             }
 
-            spawn_new_asteroids(asteroids, window_width, window_height, current_game_state, time);
+            spawn_new_asteroids(
+                asteroids,
+                window_width,
+                window_height,
+                current_game_state,
+                time,
+            );
         }
         _ => {}
     }
 }
 
-fn destroy_asteroids(asteroids: &mut Vec<Asteroid>, projectiles: &mut Vec<Projectile>, current_game_state: &mut GameState) {
+fn destroy_asteroids(
+    asteroids: &mut Vec<Asteroid>,
+    projectiles: &mut Vec<Projectile>,
+    current_game_state: &mut GameState,
+) {
     let mut proj_to_remove: HashSet<usize> = HashSet::new();
     let mut ast_to_remove: HashSet<usize> = HashSet::new();
 
@@ -525,25 +544,49 @@ fn split_asteroid(ast: &Asteroid, rng: &mut impl Rng) -> Vec<Asteroid> {
         .collect()
 }
 
-fn spawn_new_asteroids(asteroids: &mut Vec<Asteroid>, window_width: i32, window_height: i32, current_game_state: &mut GameState, now: f64) {
+fn spawn_new_asteroids(
+    asteroids: &mut Vec<Asteroid>,
+    window_width: i32,
+    window_height: i32,
+    current_game_state: &mut GameState,
+    now: f64,
+) {
     if now - current_game_state.last_asteroid_spawn_time >= 10.0 {
         let mut rng = rand::rng();
         let dimension: f32 = 2.0_f32.powf(6.0f32);
 
         for _ in 0..current_game_state.asteroid_spawn_amount {
             let possible_locations = vec![
-                Vector2::new(-dimension, rng.random_range(0.0..window_height as f32)), 
-                Vector2::new(window_width as f32, rng.random_range(0.0..window_height as f32)), 
-                Vector2::new(rng.random_range(0.0..window_width as f32), -dimension), 
-                Vector2::new(rng.random_range(0.0..window_width as f32), window_height as f32)
+                Vector2::new(-dimension, rng.random_range(0.0..window_height as f32)),
+                Vector2::new(
+                    window_width as f32,
+                    rng.random_range(0.0..window_height as f32),
+                ),
+                Vector2::new(rng.random_range(0.0..window_width as f32), -dimension),
+                Vector2::new(
+                    rng.random_range(0.0..window_width as f32),
+                    window_height as f32,
+                ),
             ];
 
             let speed = rng.random_range(50.0..150.0);
             let possible_velocities = vec![
-                { let a = rng.random_range(-FRAC_PI_2..FRAC_PI_2);       Vector2::new(a.cos() * speed, a.sin() * speed) },
-                { let a = rng.random_range(FRAC_PI_2..3.0*FRAC_PI_2);    Vector2::new(a.cos() * speed, a.sin() * speed) },
-                { let a = rng.random_range(0.0..PI);                      Vector2::new(a.cos() * speed, a.sin() * speed) },
-                { let a = rng.random_range(-PI..0.0);                     Vector2::new(a.cos() * speed, a.sin() * speed) },
+                {
+                    let a = rng.random_range(-FRAC_PI_2..FRAC_PI_2);
+                    Vector2::new(a.cos() * speed, a.sin() * speed)
+                },
+                {
+                    let a = rng.random_range(FRAC_PI_2..3.0 * FRAC_PI_2);
+                    Vector2::new(a.cos() * speed, a.sin() * speed)
+                },
+                {
+                    let a = rng.random_range(0.0..PI);
+                    Vector2::new(a.cos() * speed, a.sin() * speed)
+                },
+                {
+                    let a = rng.random_range(-PI..0.0);
+                    Vector2::new(a.cos() * speed, a.sin() * speed)
+                },
             ];
 
             let index = rng.random_range(0..possible_locations.len());
@@ -560,7 +603,8 @@ fn spawn_new_asteroids(asteroids: &mut Vec<Asteroid>, window_width: i32, window_
         }
 
         current_game_state.last_asteroid_spawn_time = now;
-        let new_spawn_amount = ((current_game_state.asteroid_spawn_amount as f32 * 1.5).ceil() as u32).min(5);
+        let new_spawn_amount =
+            ((current_game_state.asteroid_spawn_amount as f32 * 1.5).ceil() as u32).min(5);
         current_game_state.asteroid_spawn_amount = new_spawn_amount;
     }
 }

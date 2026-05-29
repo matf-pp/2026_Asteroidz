@@ -13,7 +13,7 @@ pub struct Controls {
     pub volume_down: KeyboardKey,
     pub pause: KeyboardKey,
 
-    currently_rebinding: Rebinding,
+    pub currently_rebinding: Rebinding,
     display_rebind_err: bool,
     pub from_menu: GameScreen,
 
@@ -27,7 +27,7 @@ pub struct Controls {
 }
 
 #[derive(PartialEq)]
-enum Rebinding {
+pub enum Rebinding {
     None,
     Forward,
     Left,
@@ -105,6 +105,11 @@ impl Controls {
             Rebinding::Forward | Rebinding::Left | Rebinding::Right | Rebinding::Shoot => {
                 if let Some(pressed) = rl.get_key_pressed_number() {
                     let key = Controls::code_to_key(pressed);
+
+                    if key.eq(&KeyboardKey::KEY_BACKSPACE) {
+                        controls.currently_rebinding = Rebinding::None;
+                    }
+
                     if !controls.key_already_in_use(key, &controls.currently_rebinding) {
                         match controls.currently_rebinding {
                             Rebinding::Forward => controls.forward = key,
