@@ -91,7 +91,7 @@ impl AudioManager{
                 self.audio_device.set_master_volume(self.volume);
             }
         }
-        if *active_screen == GameScreen::Paused
+        if *active_screen == GameScreen::Paused || *active_screen == GameScreen::GameOver
         {
             if self.is_thruster_sfx_playing{
                 self.audio_device.stop_music_stream(&mut self.sfx_thruster);
