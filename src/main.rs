@@ -65,7 +65,6 @@ fn main() {
 
     let mut audio_manager = AudioManager::new(&thread);
 
-    //TODO: replace hardcoded values to allow for scaling
     let button_rect_start = Rectangle::new(
         (window_width as f32 / 2.0) - 100.0,
         (window_height as f32 / 2.0) + 10.0,
@@ -151,6 +150,8 @@ fn main() {
         ));
     }
 
+    let mut should_reset_game_state: bool = false;
+
     while !rl.window_should_close() {
         poll_events(
             &mut rl,
@@ -162,6 +163,7 @@ fn main() {
             &button_rect_back,
             &mut controls,
             &mut audio_manager,
+            &mut should_reset_game_state,
         );
 
         update(
@@ -175,6 +177,7 @@ fn main() {
             &controls,
             &mut audio_manager,
             &mut current_game_state,
+            &mut should_reset_game_state,
         );
         let mut d = rl.begin_drawing(&thread);
         draw(
@@ -398,6 +401,7 @@ fn poll_events(
     button_rect_back: &Rectangle,
     controls: &mut Controls,
     audio_manager: &mut AudioManager,
+    should_reset_game_state: &mut bool,
 ) {
     match active_screen {
         GameScreen::MainMenu => {
@@ -454,6 +458,7 @@ fn poll_events(
             let mouse_pos = rl.get_mouse_position();
             if button_rect_back.check_collision_point_rec(mouse_pos) {
                 if rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+                    *should_reset_game_state = true;
                     *active_screen = GameScreen::MainMenu;
                 }
             }
@@ -472,6 +477,7 @@ fn update(
     controls: &Controls,
     audio_manager: &mut AudioManager,
     current_game_state: &mut GameState,
+    should_reset_game_state: &mut bool,
 ) {
     audio_manager.update(&rl, &controls, &player.thruster_state, &active_screen);
 
@@ -525,7 +531,72 @@ fn update(
                 time,
             );
         }
+        GameScreen::MainMenu => {
+            if *should_reset_game_state {
+                *should_reset_game_state = false;
+                reset_game_state(
+                    player,
+                    projectiles,
+                    asteroids,
+                    current_game_state,
+                    window_width,
+                    window_height,
+                    rl,
+                );
+            }
+        }
         _ => {}
+    }
+}
+
+fn reset_game_state(
+    player: &mut Player,
+    projectiles: &mut Vec<Projectile>,
+    asteroids: &mut Vec<Asteroid>,
+    current_game_state: &mut GameState,
+    window_width: i32,
+    window_height: i32,
+    rl: &mut RaylibHandle,
+) {
+    *player = Player::new(
+        Vector2::new(
+            (window_width as f32 - 32.0) / 2.0,
+            (window_height as f32 - 32.0) / 2.0,
+        ),
+        Vector2::new(0.0, 0.0),
+        Vector2::new(32.0, 32.0),
+        0.0,
+        ThrusterState::Off,
+    );
+
+    *current_game_state = GameState {
+        score: 0,
+        last_asteroid_spawn_time: rl.get_time(),
+        asteroid_spawn_amount: 1,
+    };
+
+    projectiles.clear();
+    asteroids.clear();
+
+    let mut rng = rand::rng();
+
+    for _ in 0..=2 {
+        let dimension: f32 = 2.0_f32.powf(6.0f32);
+        asteroids.push(Asteroid::new(
+            Vector2::new(
+                rng.random_range(0.0..window_width as f32),
+                rng.random_range(0.0..window_height as f32),
+            ),
+            Vector2::new(
+                rng.random_range(-100.0..100.0),
+                rng.random_range(-100.0..100.0),
+            ),
+            0.5 * dimension,
+            dimension,
+            dimension,
+            rng.random_range(0.0..360.0),
+            rng.random_range(-2.0..2.0),
+        ));
     }
 }
 
