@@ -1,9 +1,45 @@
 # 2026_Asteroidz
-Igrica inspirisana igricom Asteroid, koju bismo pisali u programskom jeziku Rust uz korišćenje Raylib grafičke biblioteke
+Klon igrice Asteroids napisan u programskom jeziku Rust korišćenjem Raylib biblioteke.
 
+## Tehnologije
+- [Rust](https://rust-lang.org/)
+- [raylib-rs](https://github.com/deltaphc/raylib-rs)
+- [Cargo](https://crates.io/)
 
+## Korišćeni alati
+- [Gimp](https://www.gimp.org/)
+- [Piskel](https://www.piskelapp.com/)
 
-## Assets used:
+## Prevođenje i pokretanje
+
+Projekat koristi Cargo alat za upravljanje paketima i prevođenje programa.
+
+Komanda za prevođenje projekta:
+```
+cargo build --release
+```
+
+Komanda za pokretanje projekta:
+```
+cargo run --release
+```
+
+## Operativni sistem
+
+Projekat je razvijan za Linux operativni sistem.
+
+Moguće je prevođenje programa za Windows operativni sistem, ali razvoj i testiranje na toj platformi nisu vršeni.
+
+## Autori
+- Filip Jevtović
+- Nikola Lazić
+- Ljubomir Banović
+
+## Licensa
+Ovaj projekat je licensiran pod **GNU General Public License v3.0".
+Pogledaj [LICENSE](LICENSE) fajl za detalje.
+
+## Korišćeni resursi
   - heart.png from: https://opengameart.org/content/heart-pixel-art
   - "Space Jazz" Kevin MacLeod (incompetech.com)
     Licensed under Creative Commons: By Attribution 4.0 License 
