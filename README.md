@@ -36,7 +36,7 @@ Moguće je prevođenje programa za Windows operativni sistem, ali razvoj i testi
 - Ljubomir Banović 24/2023
 
 ## Licensa
-Ovaj projekat je licensiran pod **GNU General Public License v3.0"**.
+Ovaj projekat je licensiran pod **GNU General Public License v3.0**.
 Pogledaj [LICENSE](LICENSE) fajl za detalje.
 
 ## Korišćeni resursi
