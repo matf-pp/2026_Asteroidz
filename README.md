@@ -31,12 +31,12 @@ Projekat je razvijan za Linux operativni sistem.
 Moguće je prevođenje programa za Windows operativni sistem, ali razvoj i testiranje na toj platformi nisu vršeni.
 
 ## Autori
-- Filip Jevtović
-- Nikola Lazić
-- Ljubomir Banović
+- Filip Jevtović 36/2023
+- Nikola Lazić 11/2023
+- Ljubomir Banović 24/2023
 
 ## Licensa
-Ovaj projekat je licensiran pod **GNU General Public License v3.0".
+Ovaj projekat je licensiran pod **GNU General Public License v3.0"**.
 Pogledaj [LICENSE](LICENSE) fajl za detalje.
 
 ## Korišćeni resursi
