@@ -95,8 +95,6 @@ impl Controls {
     }
 
     fn code_to_key(code: u32) -> KeyboardKey {
-        // just why?? why does it return u32 but want i32... 💀
-        // HACK: if anyone finds a better way, be my guest
         unsafe { std::mem::transmute(code as i32) }
     }
     pub fn poll_events(rl: &mut RaylibHandle, controls: &mut Controls) {
@@ -209,8 +207,6 @@ impl Controls {
             let y = center_y + y_offset;
 
             d.draw_text(label, (center_x - 200.0) as i32, y as i32, 25, Color::WHITE);
-
-            
 
             d.draw_rectangle_rec(
                 rect,

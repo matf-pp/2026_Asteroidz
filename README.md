@@ -4,6 +4,10 @@
 
 Klon igrice Asteroids napisan u programskom jeziku Rust korišćenjem Raylib biblioteke.
 
+![](sample-images/gameplay.png)
+![](sample-images/mainMenu.png)
+![](sample-images/pauseMenu.png)
+
 ## Tehnologije
 - [Rust](https://rust-lang.org/)
 - [raylib-rs](https://github.com/deltaphc/raylib-rs)
