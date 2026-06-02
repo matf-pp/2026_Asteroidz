@@ -1,4 +1,7 @@
 # 2026_Asteroidz
+
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/9b72079ddc9142498fe72008c7538623)](https://app.codacy.com/gh/matf-pp/2026_Asteroidz/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 Klon igrice Asteroids napisan u programskom jeziku Rust korišćenjem Raylib biblioteke.
 
 ## Tehnologije
