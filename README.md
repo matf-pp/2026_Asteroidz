@@ -4,9 +4,26 @@
 
 Klon igrice Asteroids napisan u programskom jeziku Rust korišćenjem Raylib biblioteke.
 
-![](sample-images/gameplay.png)
-![](sample-images/mainMenu.png)
-![](sample-images/pauseMenu.png)
+<p align="center">
+  <img src="./sample-images/gameplay.png" alt="Image could not be displayed" width="45%">
+</p>
+<p align="center">
+  <img src="./sample-images/mainMenu.png" alt="Image could not be displayed" width="30%" style="display:inline-block">
+  <img src="./sample-images/pauseMenu.png" alt="Image could not be displayed" width="30%" style="display:inline-block">
+</p>
+Podrazumevane kontrole:  
+
+|       Akcija     | taster |  
+| :--------------: | :----: |  
+| Napred           |   ↑    |  
+| Okreni ulevo     |   ←    |  
+| Okreni udesno    |   →    |  
+| Ispali projektil |   s    | 
+
+Ove kontrole se mogu menjati preko sledećeg menija:  
+<p align="center">  
+  <img src="./sample-images/controlsmenu.png" alt="Image could not be displayed" width="500">
+</p>
 
 ## Tehnologije
 - [Rust](https://rust-lang.org/)
