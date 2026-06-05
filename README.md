@@ -1,4 +1,11 @@
-# 2026_Asteroidz
+```           
+  ___      _                 _     _     
+ / _ \    | |               (_)   | |    
+/ /_\ \___| |_ ___ _ __ ___  _  __| |____
+|  _  / __| __/ _ \ '__/ _ \| |/ _` |_  /
+| | | \__ \ ||  __/ | | (_) | | (_| |/ / 
+\_| |_/___/\__\___|_|  \___/|_|\__,_/___|
+```
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/9b72079ddc9142498fe72008c7538623)](https://app.codacy.com/gh/matf-pp/2026_Asteroidz/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
