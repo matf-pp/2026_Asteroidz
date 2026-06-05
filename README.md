@@ -22,7 +22,7 @@ Podrazumevane kontrole:
 
 Ove kontrole se mogu menjati preko sledećeg menija:  
 <p align="center">  
-  <img src="./sample-images/controlsmenu.png" alt="Image could not be displayed" width="500">
+  <img src="./sample-images/controlsmenu.png" alt="Image could not be displayed" width="30%">
 </p>
 
 ## Tehnologije
